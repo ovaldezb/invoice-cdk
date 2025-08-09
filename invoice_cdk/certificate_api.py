@@ -1,0 +1,58 @@
+from aws_cdk import (
+    aws_lambda as _lambda,
+    aws_apigateway as apigw,
+    aws_cognito as cognito
+)
+from constructs import Construct
+
+class CertificateApiGateway(Construct):
+    def __init__(self, scope: Construct, id: str, certificate_lambda: _lambda.Function, user_pool_id: str):
+        super().__init__(scope, id)
+
+        
+
+    def create_ApiGw_certificate_lambda(self, certificate_lambda: _lambda.Function, user_pool_id: str):
+        api = apigw.RestApi(
+            self,
+            "CertificateAPI",
+            rest_api_name="Certificate API",
+            description="This service manages certificates.",
+            default_cors_preflight_options={
+                "allow_origins": apigw.Cors.ALL_ORIGINS,
+                "allow_methods": apigw.Cors.ALL_METHODS,
+                "allow_headers": ["Content-Type", "X-Amz-Date", "Authorization", "X-Api-Key", "X-Amz-Security-Token"]
+            }
+        )
+
+        # Create a Cognito User Pool authorizer
+        authorizer = apigw.CognitoUserPoolsAuthorizer(
+            self,
+            "CertificateAPIAuthorizer",
+            cognito_user_pools=[cognito.UserPool.from_user_pool_id(self, "UserPool", user_pool_id)],
+            authorizer_name="CertificateAuthorizer"
+        )
+
+        certificates_resource = api.root.add_resource("certificates")
+
+        # POST /certificates
+        certificates_integration = apigw.LambdaIntegration(
+            certificate_lambda,
+            request_templates={"application/json": '{ "statusCode": "200" }'}
+        )
+        certificates_resource.add_method("POST", certificates_integration, authorizer=authorizer)
+
+        # GET /certificates
+        certificates_resource.add_method("GET", certificates_integration, authorizer=authorizer)
+
+        # /{id} resource
+        certificate_id_resource = certificates_resource.add_resource("{id}")
+
+        # GET /certificates/{id}  (optional, if you want to get a specific certificate)
+        certificate_id_resource.add_method("GET", certificates_integration, authorizer=authorizer)
+
+        # PUT /certificates/{id}
+        certificate_id_resource.add_method("PUT", certificates_integration, authorizer=authorizer)
+
+        # DELETE /certificates/{id}
+        certificate_id_resource.add_method("DELETE", certificates_integration, authorizer=authorizer)
+        

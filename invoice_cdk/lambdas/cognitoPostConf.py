@@ -12,4 +12,3 @@ def handler(event, context):
         GroupName=grupo
     )
     return event
-    
