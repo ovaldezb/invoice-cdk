@@ -34,7 +34,8 @@ class CognitoConstruct(Construct):
                 family_name=cognito.StandardAttribute(required=True, mutable=True)
             ),
             custom_attributes={
-                "group": cognito.StringAttribute(mutable=True)
+                "group": cognito.StringAttribute(mutable=True),
+                "userId": cognito.StringAttribute(mutable=True)
             },
             # Configuración de políticas de contraseña
             password_policy=cognito.PasswordPolicy(

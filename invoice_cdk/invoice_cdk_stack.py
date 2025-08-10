@@ -6,7 +6,7 @@ from aws_cdk import (
 from requirements.constructs import Construct
 from .lambda_functions import LambdaFunctions
 from .cognito_construct import CognitoConstruct
-from .certificate_api import CertificateApiGateway
+from .certificado_apigateway import CertificateApiGateway
 
 class InvoiceCdkStack(Stack):
 
@@ -20,7 +20,7 @@ class InvoiceCdkStack(Stack):
         self.cognito = CognitoConstruct(self, "CognitoAuth", self.lambda_functions.post_confirmation_lambda)
 
         # Create API Gateway for the certificate lambda
-        CertificateApiGateway(self, "CertificateApiGateway", self.lambda_functions.certificate_lambda, self.cognito.user_pool_id) # Instantiate the class
+        CertificateApiGateway(self, "CertificateApiGateway", self.lambda_functions.certificate_lambda, self.lambda_functions.usuario_lambda, self.cognito.user_pool_id) # Instantiate the class
 
         # example resource
         # queue = sqs.Queue(
