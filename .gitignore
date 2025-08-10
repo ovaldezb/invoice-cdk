@@ -11,3 +11,6 @@ cdk.out
 
 .env
 /requirements
+/python
+/lambda_layers
+layer.zip

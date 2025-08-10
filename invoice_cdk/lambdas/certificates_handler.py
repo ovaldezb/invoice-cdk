@@ -1,18 +1,21 @@
 import json
 from http import HTTPStatus
-from invoice_cdk.dbservice.db_service import (
+from db_service import (
     add_certificate,
     update_certificate,
     list_certificates,
     delete_certificate,
 )
-from invoice_cdk.models.certificate import Certificado
+from certificate import Certificado
+import os
 
 def handler(event, context):
     http_method = event["httpMethod"]
     path_parameters = event.get("pathParameters")
     body = event.get("body")
-
+    print(body)
+    print(http_method)
+    print(os.getenv("MONGODB_URI"))
     try:
         if http_method == "POST":
             certificate_data = json.loads(body)

@@ -12,6 +12,7 @@ class LambdaFunctions(Construct):
         env = {
             "VERSION":env_vars.get("VERSION"),
             "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
+            "DB_NAME": env_vars.get("MONGO_DB"),
             
         }
         self.create_post_confirmation_lambda(env)
@@ -29,6 +30,14 @@ class LambdaFunctions(Construct):
         )
 
     def create_certificate_lambda(self, env: dict):
+        # Define a Lambda Layer
+        pymongo_layer = lambda_.LayerVersion(
+            self, "pymongo-layer",
+            code=lambda_.Code.from_asset("lambda_layers"),  # Directory with requirements
+            compatible_runtimes=[lambda_.Runtime.PYTHON_3_12],
+            description="Capa con pymongo"
+        )
+
         self.certificate_lambda = lambda_.Function(
             self, "CertificateLambda",
             function_name="certificate-lambda",
@@ -36,5 +45,6 @@ class LambdaFunctions(Construct):
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="certificates_handler.handler",
             code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
+            layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env
         )

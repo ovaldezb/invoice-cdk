@@ -1,12 +1,12 @@
 from pydantic import BaseModel
 from typing import List
-from datetime import date
+from datetime import datetime
 
 class Certificado(BaseModel):
     nombre: str
     rfc: str
     no_certificado: str
-    desde: date
-    hasta: date
+    desde: datetime
+    hasta: datetime
     sucursales: List[str]
     usuario: str

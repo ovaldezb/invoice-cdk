@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-from ..models.certificate import Certificado
+from certificate import Certificado
 
 import os
 

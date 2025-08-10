@@ -8,6 +8,7 @@ from constructs import Construct
 class CertificateApiGateway(Construct):
     def __init__(self, scope: Construct, id: str, certificate_lambda: _lambda.Function, user_pool_id: str):
         super().__init__(scope, id)
+        self.create_ApiGw_certificate_lambda(certificate_lambda, user_pool_id)
 
         
 
@@ -18,9 +19,10 @@ class CertificateApiGateway(Construct):
             rest_api_name="Certificate API",
             description="This service manages certificates.",
             default_cors_preflight_options={
-                "allow_origins": apigw.Cors.ALL_ORIGINS,
-                "allow_methods": apigw.Cors.ALL_METHODS,
-                "allow_headers": ["Content-Type", "X-Amz-Date", "Authorization", "X-Api-Key", "X-Amz-Security-Token"]
+                "allow_origins": ['*'],
+                "allow_methods": ['OPTIONS','GET','POST','PUT','DELETE'],
+                "allow_headers": ["Content-Type", "X-Amz-Date", "Authorization", "X-Api-Key", "X-Amz-Security-Token"],
+                "allow_credentials": True
             }
         )
 
@@ -32,7 +34,7 @@ class CertificateApiGateway(Construct):
             authorizer_name="CertificateAuthorizer"
         )
 
-        certificates_resource = api.root.add_resource("certificates")
+        certificates_resource = api.root.add_resource("certificados")
 
         # POST /certificates
         certificates_integration = apigw.LambdaIntegration(
