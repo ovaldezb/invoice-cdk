@@ -5,6 +5,5 @@ class Usuario(BaseModel):
     nombre: str
     razon_social: str
     email: str
-    rfc: str
     telefono: str
     

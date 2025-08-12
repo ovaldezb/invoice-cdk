@@ -31,11 +31,13 @@ class CognitoConstruct(Construct):
             standard_attributes=cognito.StandardAttributes(
                 email=cognito.StandardAttribute(required=True, mutable=True),
                 given_name=cognito.StandardAttribute(required=True, mutable=True),
-                family_name=cognito.StandardAttribute(required=True, mutable=True)
+                family_name=cognito.StandardAttribute(required=True, mutable=True),
+                phone_number=cognito.StandardAttribute(required=False, mutable=True)    
+
             ),
             custom_attributes={
                 "group": cognito.StringAttribute(mutable=True),
-                "userId": cognito.StringAttribute(mutable=True)
+                "razon_social": cognito.StringAttribute(mutable=True)
             },
             # Configuración de políticas de contraseña
             password_policy=cognito.PasswordPolicy(

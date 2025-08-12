@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime
+from sucursal import Sucursal
 
 class Certificado(BaseModel):
     nombre: str
@@ -8,5 +9,5 @@ class Certificado(BaseModel):
     no_certificado: str
     desde: datetime
     hasta: datetime
-    sucursales: List[str]
+    sucursales: List[Sucursal]
     usuario: str

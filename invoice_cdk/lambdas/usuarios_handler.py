@@ -6,7 +6,7 @@ from db_user import (
     list_usuarios,
     delete_usuario,
 )
-from models.usuario import Usuario
+from usuario import Usuario
 
 headers = {
     "Content-Type": "application/json",

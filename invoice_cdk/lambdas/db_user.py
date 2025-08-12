@@ -1,6 +1,8 @@
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-from models.usuario import Usuario
+from usuario import Usuario
+
+import os
 
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client[os.getenv("DB_NAME")]
