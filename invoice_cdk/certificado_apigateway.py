@@ -1,4 +1,5 @@
 from aws_cdk import (
+    Duration,
     aws_lambda as _lambda,
     aws_apigateway as apigw,
     aws_cognito as cognito
@@ -6,17 +7,15 @@ from aws_cdk import (
 from constructs import Construct
 
 class CertificateApiGateway(Construct):
-    def __init__(self, scope: Construct, id: str, certificate_lambda: _lambda.Function, sucursal_lambda: _lambda.Function, user_pool_id: str):
+    def __init__(self, scope: Construct, id: str, certificate_lambda: _lambda.Function, sucursal_lambda: _lambda.Function, datos_factura_lambda: _lambda.Function, invoice_pool: cognito.UserPool, custom_authorizer_lambda: _lambda.Function = None):
         super().__init__(scope, id)
-        self.create_ApiGw_certificate_lambda(certificate_lambda, user_pool_id)
-        self.create_ApiGw_sucursal_lambda(sucursal_lambda, user_pool_id)
 
-    def create_ApiGw_certificate_lambda(self, certificate_lambda: _lambda.Function, user_pool_id: str):
+        # Create a single RestApi instance
         api = apigw.RestApi(
             self,
-            "CertificateAPI",
-            rest_api_name="Certificate API",
-            description="This service manages certificates.",
+            "InvoiceAPI",
+            rest_api_name="Invoice API",
+            description="This service manages certificates and branches.",
             default_cors_preflight_options={
                 "allow_origins": ['*'],
                 "allow_methods": ['OPTIONS','GET','POST','PUT','DELETE'],
@@ -25,123 +24,64 @@ class CertificateApiGateway(Construct):
             }
         )
 
-        # Create a Cognito User Pool authorizer
-        authorizer = apigw.CognitoUserPoolsAuthorizer(
-            self,
-            "CertificateAPIAuthorizer",
-            cognito_user_pools=[cognito.UserPool.from_user_pool_id(self, "CertificatePool", user_pool_id)],
-            authorizer_name="CertificateAuthorizer"
-        )
+        # Create authorizer (preferir custom authorizer si está disponible)
+        if custom_authorizer_lambda:
+            authorizer = apigw.TokenAuthorizer(
+                self,
+                "CustomTokenAuthorizer",
+                handler=custom_authorizer_lambda,
+                authorizer_name="CustomInvoiceAuthorizer"
+            )
+        else:
+            # Fallback a Cognito User Pool authorizer
+            authorizer = apigw.CognitoUserPoolsAuthorizer(
+                self,
+                "InvoiceAPIAuthorizer",
+                cognito_user_pools=[invoice_pool],
+                authorizer_name="InvoiceAuthorizer",
+                identity_source="method.request.header.Authorization"
+            )
 
+        # Certificates resources
         certificates_resource = api.root.add_resource("certificados")
+        certificate_id_resource = certificates_resource.add_resource("{id}")
 
-        # POST /certificates
-        certificates_integration = apigw.LambdaIntegration(
+        # Sucursales resources
+        sucursales_resource = api.root.add_resource("sucursales")
+        sucursal_id_resource = sucursales_resource.add_resource("{id}")
+
+        # Datos Factura resources
+        datos_factura = api.root.add_resource("datosfactura")
+
+        # Integrations
+        certificate_integration = apigw.LambdaIntegration(
             certificate_lambda,
             request_templates={"application/json": '{ "statusCode": "200" }'}
         )
-        certificates_resource.add_method("POST", certificates_integration)
 
-        # GET /certificates
-        certificates_resource.add_method("GET", certificates_integration)
-
-        # /{id} resource
-        certificate_id_resource = certificates_resource.add_resource("{id}")
-
-        # GET /certificates/{id}  (optional, if you want to get a specific certificate)
-        certificate_id_resource.add_method("GET", certificates_integration, authorizer=authorizer)
-
-        # PUT /certificates/{id}
-        certificate_id_resource.add_method("PUT", certificates_integration)
-
-        # DELETE /certificates/{id}
-        certificate_id_resource.add_method("DELETE", certificates_integration, authorizer=authorizer)
-
-    def create_ApiGw_sucursal_lambda(self, sucursal_lambda: _lambda.Function, user_pool_id: str):
-        api = apigw.RestApi(
-            self,
-            "SucursalAPI",
-            rest_api_name="Sucursal API",
-            description="This service manages branches.",
-            default_cors_preflight_options={
-                "allow_origins": ['*'],
-                "allow_methods": ['OPTIONS','GET','POST','PUT','DELETE'],
-                "allow_headers": ["Content-Type", "X-Amz-Date", "Authorization", "X-Api-Key", "X-Amz-Security-Token"],
-                "allow_credentials": True
-            }
-        )
-
-        # Create a Cognito User Pool authorizer
-        authorizer = apigw.CognitoUserPoolsAuthorizer(
-            self,
-            "SucursalAPIAuthorizer",
-            cognito_user_pools=[cognito.UserPool.from_user_pool_id(self, "SucursalPool", user_pool_id)],
-            authorizer_name="SucursalAuthorizer"
-        )
-
-        sucursales_resource = api.root.add_resource("sucursales")
-
-        # POST /sucursales
-        sucursales_integration = apigw.LambdaIntegration(
+        sucursal_integration = apigw.LambdaIntegration(
             sucursal_lambda,
             request_templates={"application/json": '{ "statusCode": "200" }'}
         )
-        sucursales_resource.add_method("POST", sucursales_integration)
 
-        # /{id} resource
-        sucursal_id_resource = sucursales_resource.add_resource("{id}")
-
-        # GET /sucursales/{id}  (optional, if you want to get a specific branch)
-        sucursal_id_resource.add_method("GET", sucursales_integration, authorizer=authorizer)
-
-        # PUT /sucursales/{id}
-        sucursal_id_resource.add_method("PUT", sucursales_integration, authorizer=authorizer)
-
-        # DELETE /sucursales/{id}
-        sucursal_id_resource.add_method("DELETE", sucursales_integration, authorizer=authorizer)
-
-    """def create_ApiGw_usuario_lambda(self, usuario_lambda: _lambda.Function, user_pool_id: str):
-        api = apigw.RestApi(
-            self,
-            "UsuarioAPI",
-            rest_api_name="Usuario API",
-            description="This service manages users.",
-            default_cors_preflight_options={
-                "allow_origins": ['*'],
-                "allow_methods": ['OPTIONS','GET','POST','PUT','DELETE'],
-                "allow_headers": ["Content-Type", "X-Amz-Date", "Authorization", "X-Api-Key", "X-Amz-Security-Token"],
-                "allow_credentials": True
-            }
-        )
-
-        # Create a Cognito User Pool authorizer
-        authorizer = apigw.CognitoUserPoolsAuthorizer(
-            self,
-            "UsuarioAPIAuthorizer",
-            cognito_user_pools=[cognito.UserPool.from_user_pool_id(self, "UserPool", user_pool_id)],
-            authorizer_name="UsuarioAuthorizer"
-        )
-
-        usuarios_resource = api.root.add_resource("usuarios")
-
-        # POST /usuarios
-        usuarios_integration = apigw.LambdaIntegration(
-            usuario_lambda,
+        datos_factura_integration = apigw.LambdaIntegration(
+            datos_factura_lambda,
             request_templates={"application/json": '{ "statusCode": "200" }'}
         )
-        usuarios_resource.add_method("POST", usuarios_integration)
 
-        # GET /usuarios
-        usuarios_resource.add_method("GET", usuarios_integration)
+        # Certificate methods (CON CUSTOM AUTHORIZER)
+        certificates_resource.add_method("POST", certificate_integration)
+        certificates_resource.add_method("GET", certificate_integration, authorizer=authorizer)
+        certificate_id_resource.add_method("GET", certificate_integration, authorizer=authorizer)
+        certificate_id_resource.add_method("PUT", certificate_integration)
+        certificate_id_resource.add_method("DELETE", certificate_integration)
 
-        # /{id} resource
-        usuario_id_resource = usuarios_resource.add_resource("{id}")
+        # Sucursal methods (CON CUSTOM AUTHORIZER)
+        sucursales_resource.add_method("POST", sucursal_integration)
+        sucursales_resource.add_method("GET", sucursal_integration)
+        sucursal_id_resource.add_method("GET", sucursal_integration)
+        sucursal_id_resource.add_method("PUT", sucursal_integration)
+        sucursal_id_resource.add_method("DELETE", sucursal_integration)
 
-        # GET /usuarios/{id}  (optional, if you want to get a specific user)
-        usuario_id_resource.add_method("GET", usuarios_integration, authorizer=authorizer)
-
-        # PUT /usuarios/{id}
-        usuario_id_resource.add_method("PUT", usuarios_integration, authorizer=authorizer)
-
-        # DELETE /usuarios/{id}
-        usuario_id_resource.add_method("DELETE", usuarios_integration, authorizer=authorizer)"""
+        # Datos Factura methods (CON CUSTOM AUTHORIZER)
+        datos_factura.add_method("GET", datos_factura_integration)

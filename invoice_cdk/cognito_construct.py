@@ -71,7 +71,13 @@ class CognitoConstruct(Construct):
             # Duración de tokens
             access_token_validity=Duration.hours(1),
             id_token_validity=Duration.hours(1),
-            refresh_token_validity=Duration.days(30)
+            refresh_token_validity=Duration.days(30),
+            # Scopes para API Gateway authorizer
+            read_attributes=cognito.ClientAttributes().with_standard_attributes(
+                email=True,
+                given_name=True,
+                family_name=True
+            )
         )
 
         # Crear grupos de usuarios

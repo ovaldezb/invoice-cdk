@@ -6,6 +6,8 @@ class LambdaFunctions(Construct):
     post_confirmation_lambda: lambda_.Function
     certificate_lambda: lambda_.Function
     sucursal_lambda: lambda_.Function
+    custom_authorizer_lambda: lambda_.Function
+    datos_factura_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -24,9 +26,20 @@ class LambdaFunctions(Construct):
             compatible_runtimes=[lambda_.Runtime.PYTHON_3_12],
             description="Capa con pymongo"
         )
+        
+        # Layer para custom authorizer
+        authorizer_layer = lambda_.LayerVersion(
+            self, "authorizer-layer",
+            code=lambda_.Code.from_asset("authorizer_layer"),
+            compatible_runtimes=[lambda_.Runtime.PYTHON_3_12],
+            description="Capa con PyJWT y requests para authorizer"
+        )
+        
         self.create_post_confirmation_lambda(env)
         self.create_certificate_lambda(env, pymongo_layer)
         self.create_sucursal_lambda(env, pymongo_layer)
+        self.create_custom_authorizer_lambda(env, authorizer_layer)
+        self.create_datos_factura_lambda(env, pymongo_layer)
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -64,15 +77,28 @@ class LambdaFunctions(Construct):
             timeout=Duration.seconds(50)  # Optional: Set a timeout for the Lambda function
         )
 
-    """def create_usuario_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
-        self.usuario_lambda = lambda_.Function(
-            self, "UsuarioLambda",
-            function_name="usuario-lambda-invoice",
-            description="Lambda function to handle user operations",
+    def create_custom_authorizer_lambda(self, env: dict, authorizer_layer: lambda_.LayerVersion):
+        self.custom_authorizer_lambda = lambda_.Function(
+            self, "CustomAuthorizerLambda",
+            function_name="custom-authorizer-lambda-invoice",
+            description="Lambda function for custom authorization",
             runtime=lambda_.Runtime.PYTHON_3_12,
-            handler="usuarios_handler.handler",
+            handler="simple_authorizer.handler",
+            code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
+            layers=[authorizer_layer],
+            environment=env,
+            timeout=Duration.seconds(30)
+        )
+
+    def create_datos_factura_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.datos_factura_lambda = lambda_.Function(
+            self, "DatosFacturaLambda",
+            function_name="datos-factura-lambda-invoice",
+            description="Lambda function to handle datos para factura",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="datos_factura_handler.handler",
             code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env,
             timeout=Duration.seconds(10)  # Optional: Set a timeout for the Lambda function
-        )"""
+        )

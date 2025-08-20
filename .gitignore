@@ -14,3 +14,4 @@ cdk.out
 /python
 /lambda_layers
 layer.zip
+/authorizer_layer
