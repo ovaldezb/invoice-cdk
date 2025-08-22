@@ -6,7 +6,8 @@ from db_sucursal import (
     add_sucursal,
     update_sucursal,
     delete_sucursal,
-    get_sucursal_by_codigo
+    get_sucursal_by_codigo,
+    get_sucursal_by_id
 )
 from db_certificado import (update_certificate, get_certificate_by_id)
 from sucursal import Sucursal
@@ -69,7 +70,7 @@ def handler(event, context):
             update_sucursal(sucursal_id, updated_data, sucursal_collection)
             sucursal_actualizada = get_sucursal_by_id(sucursal_id, sucursal_collection)
             sucursal_actualizada["_id"] = str(sucursal_actualizada["_id"]) if sucursal_actualizada else None
-            print(f"Sucursal updated: {sucursal_actualizada}")
+            #print(f"Sucursal updated: {sucursal_actualizada}")
             return {
                 "statusCode": HTTPStatus.OK,
                 "body": json.dumps({"message": "Sucursal updated", "sucursal": sucursal_actualizada}),
@@ -82,7 +83,7 @@ def handler(event, context):
             certificado = sucursal["id_certificado"]
             certificado_found = get_certificate_by_id(certificado, certificado_collection)
             if certificado_found:
-                print(f"Deleting certificate with ID: {certificado_found}")
+                #print(f"Deleting certificate with ID: {certificado_found}")
                 sucursales = certificado_found.get("sucursales", [])
                 new_sucursales = []
                 for sucursal in sucursales:

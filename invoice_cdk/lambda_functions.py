@@ -8,6 +8,8 @@ class LambdaFunctions(Construct):
     sucursal_lambda: lambda_.Function
     custom_authorizer_lambda: lambda_.Function
     datos_factura_lambda: lambda_.Function
+    tapetes_lambda: lambda_.Function
+    folio_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -19,6 +21,13 @@ class LambdaFunctions(Construct):
             "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
             "DB_NAME": env_vars.get("MONGO_DB"),
             
+        }
+        env_tapetes = {
+            "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
+            "DB_NAME": env_vars.get("MONGO_DB"),
+            "TAPETES_API_URL": env_vars.get("TAPETES_API_URL"),
+            "USER_NAME": env_vars.get("USER_NAME"),
+            "PASSWORD": env_vars.get("PASSWORD")
         }
         pymongo_layer = lambda_.LayerVersion(
             self, "pymongo-layer",
@@ -40,6 +49,8 @@ class LambdaFunctions(Construct):
         self.create_sucursal_lambda(env, pymongo_layer)
         self.create_custom_authorizer_lambda(env, authorizer_layer)
         self.create_datos_factura_lambda(env, pymongo_layer)
+        self.create_tapetes_lambda(env_tapetes, pymongo_layer)
+        self.create_folio_lambda(env, pymongo_layer)
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -74,7 +85,7 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env,
-            timeout=Duration.seconds(50)  # Optional: Set a timeout for the Lambda function
+            timeout=Duration.seconds(10)  # Optional: Set a timeout for the Lambda function
         )
 
     def create_custom_authorizer_lambda(self, env: dict, authorizer_layer: lambda_.LayerVersion):
@@ -87,7 +98,7 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
             layers=[authorizer_layer],
             environment=env,
-            timeout=Duration.seconds(30)
+            timeout=Duration.seconds(10)
         )
 
     def create_datos_factura_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
@@ -97,6 +108,32 @@ class LambdaFunctions(Construct):
             description="Lambda function to handle datos para factura",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="datos_factura_handler.handler",
+            code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
+            layers=[pymongo_layer],  # Add the layer to the Lambda function
+            environment=env,
+            timeout=Duration.seconds(10)  # Optional: Set a timeout for the Lambda function
+        )
+
+    def create_tapetes_lambda(self, env_tapetes: dict, pymongo_layer: lambda_.LayerVersion):
+        self.tapetes_lambda = lambda_.Function(
+            self, "TapetesLambda",
+            function_name="tapetes-lambda-invoice",
+            description="Lambda function to handle tapetes operations",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="tapetes_handler.handler",
+            code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
+            layers=[pymongo_layer],  # Add the layer to the Lambda function
+            environment=env_tapetes,
+            timeout=Duration.seconds(10)  # Optional: Set a timeout for the Lambda function
+        )
+
+    def create_folio_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.folio_lambda = lambda_.Function(
+            self, "FolioLambda",
+            function_name="folio-lambda-invoice",
+            description="Lambda function to handle folio operations",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="folio_handler.handler",
             code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env,

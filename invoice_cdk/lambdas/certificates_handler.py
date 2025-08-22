@@ -1,6 +1,5 @@
 import json
 import os
-#import requests
 from pymongo import MongoClient
 from bson import json_util
 from http import HTTPStatus
@@ -79,15 +78,6 @@ def handler(event, context):
             for sucursal in sucursales:
                 delete_sucursal(sucursal["_id"], sucursal_collection)
             delete_certificate(cert_id, certificates_collection)
-            
-            # Call external API endpoint
-            """
-            try:
-                response = requests.delete(f"http://localhost:8080/api/cert/{cert_id}")
-                print(f"External API call status: {response.status_code}")
-            except requests.RequestException as e:
-                print(f"Error calling external API: {str(e)}")
-            """
             
             return {
                 "statusCode": HTTPStatus.OK,

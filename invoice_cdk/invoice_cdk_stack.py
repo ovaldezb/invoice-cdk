@@ -24,6 +24,8 @@ class InvoiceCdkStack(Stack):
                             self.lambda_functions.certificate_lambda, 
                             self.lambda_functions.sucursal_lambda, 
                             self.lambda_functions.datos_factura_lambda,
+                            self.lambda_functions.tapetes_lambda,
+                            self.lambda_functions.folio_lambda,
                             self.cognito_invoice.user_pool,
                             self.lambda_functions.custom_authorizer_lambda)
 

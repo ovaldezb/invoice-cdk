@@ -7,7 +7,7 @@ from aws_cdk import (
 from constructs import Construct
 
 class CertificateApiGateway(Construct):
-    def __init__(self, scope: Construct, id: str, certificate_lambda: _lambda.Function, sucursal_lambda: _lambda.Function, datos_factura_lambda: _lambda.Function, invoice_pool: cognito.UserPool, custom_authorizer_lambda: _lambda.Function = None):
+    def __init__(self, scope: Construct, id: str, certificate_lambda: _lambda.Function, sucursal_lambda: _lambda.Function, datos_factura_lambda: _lambda.Function, tapetes_lambda: _lambda.Function, folio_lambda: _lambda.Function, invoice_pool: cognito.UserPool, custom_authorizer_lambda: _lambda.Function = None):
         super().__init__(scope, id)
 
         # Create a single RestApi instance
@@ -53,6 +53,14 @@ class CertificateApiGateway(Construct):
         # Datos Factura resources
         datos_factura = api.root.add_resource("datosfactura")
 
+        #Tapetes resource
+        tapetes_resource = api.root.add_resource("tapetes")
+        tapetes_id_resource = tapetes_resource.add_resource("{ticket}")
+
+        #Folio resource
+        folio_resource = api.root.add_resource("folio")
+        folio_id_resource = folio_resource.add_resource("{sucursal}")
+
         # Integrations
         certificate_integration = apigw.LambdaIntegration(
             certificate_lambda,
@@ -66,6 +74,16 @@ class CertificateApiGateway(Construct):
 
         datos_factura_integration = apigw.LambdaIntegration(
             datos_factura_lambda,
+            request_templates={"application/json": '{ "statusCode": "200" }'}
+        )
+
+        tapetes_integration = apigw.LambdaIntegration(
+            tapetes_lambda,
+            request_templates={"application/json": '{ "statusCode": "200" }'}
+        )   
+
+        folio_integration = apigw.LambdaIntegration(
+            folio_lambda,
             request_templates={"application/json": '{ "statusCode": "200" }'}
         )
 
@@ -85,3 +103,12 @@ class CertificateApiGateway(Construct):
 
         # Datos Factura methods (CON CUSTOM AUTHORIZER)
         datos_factura.add_method("GET", datos_factura_integration)
+
+        #Datos Tapetes methods (CON CUSTOM AUTHORIZER)
+        tapetes_id_resource.add_method("GET", tapetes_integration)
+
+        #Datos Folio methods (CON CUSTOM AUTHORIZER)
+        folio_resource.add_method("POST", folio_integration)
+        folio_id_resource.add_method("GET", folio_integration)
+        folio_id_resource.add_method("PUT", folio_integration)
+        
