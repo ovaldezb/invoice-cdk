@@ -7,7 +7,14 @@ from aws_cdk import (
 from constructs import Construct
 
 class CertificateApiGateway(Construct):
-    def __init__(self, scope: Construct, id: str, certificate_lambda: _lambda.Function, sucursal_lambda: _lambda.Function, datos_factura_lambda: _lambda.Function, tapetes_lambda: _lambda.Function, folio_lambda: _lambda.Function, invoice_pool: cognito.UserPool, custom_authorizer_lambda: _lambda.Function = None):
+    def __init__(self, scope: Construct, id: str, certificate_lambda: _lambda.Function, 
+                 sucursal_lambda: _lambda.Function, 
+                 datos_factura_lambda: _lambda.Function, 
+                 tapetes_lambda: _lambda.Function, 
+                 folio_lambda: _lambda.Function, 
+                 genera_factura_lambda: _lambda.Function,
+                 invoice_pool: cognito.UserPool, 
+                 custom_authorizer_lambda: _lambda.Function = None):
         super().__init__(scope, id)
 
         # Create a single RestApi instance
@@ -61,6 +68,9 @@ class CertificateApiGateway(Construct):
         folio_resource = api.root.add_resource("folio")
         folio_id_resource = folio_resource.add_resource("{sucursal}")
 
+        #Folio resource
+        genera_factura = api.root.add_resource("factura")
+
         # Integrations
         certificate_integration = apigw.LambdaIntegration(
             certificate_lambda,
@@ -84,6 +94,11 @@ class CertificateApiGateway(Construct):
 
         folio_integration = apigw.LambdaIntegration(
             folio_lambda,
+            request_templates={"application/json": '{ "statusCode": "200" }'}
+        )
+
+        genera_factura_integration = apigw.LambdaIntegration(
+            genera_factura_lambda,
             request_templates={"application/json": '{ "statusCode": "200" }'}
         )
 
@@ -111,4 +126,7 @@ class CertificateApiGateway(Construct):
         folio_resource.add_method("POST", folio_integration)
         folio_id_resource.add_method("GET", folio_integration)
         folio_id_resource.add_method("PUT", folio_integration)
+
+        #Datos Genera Factura methods (CON CUSTOM AUTHORIZER)
+        genera_factura.add_method("POST", genera_factura_integration)
         

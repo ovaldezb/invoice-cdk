@@ -46,7 +46,7 @@ def handler(event, context):
                 data=json.dumps({"ticket": ticket})
             )
             venta_respuesta = venta.json()
-            print(f"Venta response: {venta_respuesta}")
+            
             if 'detail' in venta_respuesta:
                 print(f"Detail: {venta_respuesta['detail']}")
             if 'detail' in venta_respuesta:
@@ -56,7 +56,7 @@ def handler(event, context):
                     "body": json.dumps({"message": venta_respuesta["detail"]})
                 }
             sucursal = venta_respuesta.get("sucursal")
-            print(f"Sucursal: {sucursal}")
+            
             sucursal_data = get_sucursal_by_codigo(sucursal, sucursal_collection)
             if not sucursal_data:
                 return {
@@ -73,13 +73,15 @@ def handler(event, context):
                     "body": json.dumps({"message": "Certificado no encontrado, consúltalo con el Administrador"})
                 }
             certificado["_id"] = str(certificado["_id"])
+            sucursal_data["_id"] = str(sucursal_data["_id"])
             return {
                 "statusCode": 200,
                 "headers": headers,
                 "body": json.dumps(
                     {
                         "venta": venta.json(),
-                        "certificado": certificado
+                        "certificado": certificado,
+                        "sucursal": sucursal_data
                     }
                 )
             }
