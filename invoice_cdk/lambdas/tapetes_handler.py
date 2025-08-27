@@ -3,6 +3,7 @@ import os
 import requests
 from db_sucursal import get_sucursal_by_codigo
 from db_certificado import get_certificate_by_id
+from db_datos_factura import get_descripcion_by_clave
 from pymongo import MongoClient
 
 user_name = os.getenv("USER_NAME")
@@ -12,6 +13,8 @@ client = MongoClient(os.getenv("MONGODB_URI"))
 db = client[os.getenv("DB_NAME")]
 sucursal_collection = db["sucursales"]
 certificado_collection = db["certificates"]
+medidas_collection = db["medidas"]
+
 
 
 headersEndpoint = {
@@ -48,15 +51,12 @@ def handler(event, context):
             venta_respuesta = venta.json()
             
             if 'detail' in venta_respuesta:
-                print(f"Detail: {venta_respuesta['detail']}")
-            if 'detail' in venta_respuesta:
                 return {
                     "statusCode": 404,
                     "headers": headers,
                     "body": json.dumps({"message": venta_respuesta["detail"]})
                 }
             sucursal = venta_respuesta.get("sucursal")
-            
             sucursal_data = get_sucursal_by_codigo(sucursal, sucursal_collection)
             if not sucursal_data:
                 return {
@@ -64,6 +64,11 @@ def handler(event, context):
                     "headers": headers,
                     "body": json.dumps({"message": "Sucursal no encontrada, consúltalo con el Administrador"})
                 }
+            detalle = venta_respuesta.get("detalle")
+            for item in detalle:
+                clave = item.get("claveunidad")
+                descripcion = get_descripcion_by_clave(clave, medidas_collection)
+                item['unidad'] = descripcion
             id_certificado = sucursal_data.get("id_certificado")
             certificado = get_certificate_by_id(id_certificado, certificado_collection)
             if not certificado:
@@ -79,7 +84,7 @@ def handler(event, context):
                 "headers": headers,
                 "body": json.dumps(
                     {
-                        "venta": venta.json(),
+                        "venta": venta_respuesta,
                         "certificado": certificado,
                         "sucursal": sucursal_data
                     }

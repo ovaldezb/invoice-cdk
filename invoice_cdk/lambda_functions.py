@@ -11,6 +11,7 @@ class LambdaFunctions(Construct):
     tapetes_lambda: lambda_.Function
     folio_lambda: lambda_.Function
     genera_factura_lambda: lambda_.Function
+    receptor_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -60,6 +61,7 @@ class LambdaFunctions(Construct):
         self.create_tapetes_lambda(env_tapetes, pymongo_layer)
         self.create_folio_lambda(env, pymongo_layer)
         self.create_genera_factura_lambda(env_fact, pymongo_layer)
+        self.create_receptor_lambda(env, pymongo_layer)
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -156,6 +158,19 @@ class LambdaFunctions(Construct):
             description="Lambda function to handle factura generation",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="genera_factura_handler.handler",
+            code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(10)
+        )
+
+    def create_receptor_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.receptor_lambda = lambda_.Function(
+            self, "ReceptorLambda",
+            function_name="receptor-lambda-invoice",
+            description="Lambda function to handle receptor operations",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="receptor_handler.handler",
             code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
             layers=[pymongo_layer],
             environment=env,
