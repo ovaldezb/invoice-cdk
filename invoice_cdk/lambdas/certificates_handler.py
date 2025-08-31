@@ -52,7 +52,8 @@ def handler(event, context):
             }
 
         elif http_method == "GET":
-            usuario = path_parameters.get("usuario")
+            usuario = path_parameters.get("id")
+            print(usuario)
             certificates = list_certificates(usuario,certificates_collection)
             for cert in certificates:
                 cert["_id"] = str(cert["_id"])

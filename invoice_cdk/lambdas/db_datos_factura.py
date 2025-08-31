@@ -1,4 +1,4 @@
-from invoice_cdk.lambdas.factura_emitida import FacturaEmitida
+from factura_emitida import FacturaEmitida
 
 def get_uso_cfdi(usocfdi_collection):
     return list(usocfdi_collection.find())

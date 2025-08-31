@@ -113,34 +113,33 @@ class CertificateApiGateway(Construct):
         )
 
         # Certificate methods (CON CUSTOM AUTHORIZER)
-        certificates_resource.add_method("POST", certificate_integration)
+        certificates_resource.add_method("POST", certificate_integration, authorizer=authorizer)
         certificates_resource.add_method("GET", certificate_integration, authorizer=authorizer)
         certificate_id_resource.add_method("GET", certificate_integration, authorizer=authorizer)
-        certificate_id_resource.add_method("PUT", certificate_integration)
-        certificate_id_resource.add_method("DELETE", certificate_integration)
+        certificate_id_resource.add_method("PUT", certificate_integration, authorizer=authorizer)
+        certificate_id_resource.add_method("DELETE", certificate_integration, authorizer=authorizer)
 
         # Sucursal methods (CON CUSTOM AUTHORIZER)
-        sucursales_resource.add_method("POST", sucursal_integration)
-        sucursales_resource.add_method("GET", sucursal_integration, authorizer=authorizer)
-        sucursal_id_resource.add_method("GET", sucursal_integration)
-        sucursal_id_resource.add_method("PUT", sucursal_integration)
-        sucursal_id_resource.add_method("DELETE", sucursal_integration)
+        sucursales_resource.add_method("POST", sucursal_integration, authorizer=authorizer)
+        sucursal_id_resource.add_method("GET", sucursal_integration, authorizer=authorizer)
+        sucursal_id_resource.add_method("PUT", sucursal_integration, authorizer=authorizer)
+        sucursal_id_resource.add_method("DELETE", sucursal_integration, authorizer=authorizer)
 
-        # Datos Factura methods (CON CUSTOM AUTHORIZER)
+        # Datos Factura methods
         datos_factura.add_method("GET", datos_factura_integration)
 
-        #Datos Tapetes methods (CON CUSTOM AUTHORIZER)
+        #Datos Tapetes methods 
         tapetes_id_resource.add_method("GET", tapetes_integration)
 
-        #Datos Folio methods (CON CUSTOM AUTHORIZER)
+        #Datos Folio methods 
         folio_resource.add_method("POST", folio_integration)
         folio_id_resource.add_method("GET", folio_integration)
         folio_id_resource.add_method("PUT", folio_integration)
 
-        #Datos Genera Factura methods (CON CUSTOM AUTHORIZER)
+        #Datos Genera Factura methods 
         genera_factura.add_method("POST", genera_factura_integration)
 
-        #Datos Receptor methods (CON CUSTOM AUTHORIZER)
+        #Datos Receptor methods
         receptor_resource.add_method("POST", receptor_integration)
         receptor_id_resource.add_method("GET", receptor_integration)
         receptor_id_resource.add_method("PUT", receptor_integration)
