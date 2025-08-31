@@ -10,8 +10,8 @@ def update_certificate(cert_id: str, updated_data: dict, certificates_collection
         {"_id": ObjectId(cert_id)}, {"$set": updated_data}
     )
 
-def list_certificates(certificates_collection):
-    return list(certificates_collection.find())
+def list_certificates(usuario: str, certificates_collection):
+    return list(certificates_collection.find({"usuario": usuario}))
 
 def get_certificate_by_id(cert_id: str, certificates_collection):
     return certificates_collection.find_one({"_id": ObjectId(cert_id)})

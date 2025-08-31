@@ -8,3 +8,4 @@ class Sucursal(BaseModel):
     codigo_postal: str
     responsable: str
     telefono: str
+    regimen_fiscal: str

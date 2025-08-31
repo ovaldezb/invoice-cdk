@@ -15,8 +15,6 @@ sucursal_collection = db["sucursales"]
 certificado_collection = db["certificates"]
 medidas_collection = db["medidas"]
 
-
-
 headersEndpoint = {
     'Content-Type': 'application/x-www-form-urlencoded',
 }
@@ -28,7 +26,6 @@ headers = {
 def handler(event, context):
     http_method = event["httpMethod"]
     path_parameters = event.get("pathParameters")
-    body = event.get("body")
     try:
         # Call external API endpoint
         if http_method == "GET":

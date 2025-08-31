@@ -2,6 +2,7 @@ from aws_cdk import Duration, aws_lambda as lambda_
 from constructs import Construct
 from dotenv import dotenv_values
 
+INVOICE_LAMBDAS_PATH = "invoice_cdk/lambdas"
 class LambdaFunctions(Construct):
     post_confirmation_lambda: lambda_.Function
     certificate_lambda: lambda_.Function
@@ -35,7 +36,12 @@ class LambdaFunctions(Construct):
         env_fact ={
             "SW_USER_NAME": env_vars.get("SW_USER_NAME"),
             "SW_USER_PASSWORD": env_vars.get("SW_USER_PASSWORD"),
-            "SW_URL": env_vars.get("SW_URL")
+            "SW_URL": env_vars.get("SW_URL"),
+            "TAPETES_API_URL": env_vars.get("TAPETES_API_URL"),
+            "USER_NAME": env_vars.get("USER_NAME"),
+            "PASSWORD": env_vars.get("PASSWORD"),
+            "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
+            "DB_NAME": env_vars.get("MONGO_DB"),
         }
 
         pymongo_layer = lambda_.LayerVersion(
@@ -69,7 +75,7 @@ class LambdaFunctions(Construct):
             function_name="post-confirmation-lambda-invoice",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="cognitoPostConf.handler",
-            code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             environment=env
         )
 
@@ -80,7 +86,7 @@ class LambdaFunctions(Construct):
             description="Lambda function to handle certificate operations",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="certificates_handler.handler",
-            code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env,
             timeout=Duration.seconds(10)  # Optional: Set a timeout for the Lambda function
@@ -93,7 +99,7 @@ class LambdaFunctions(Construct):
             description="Lambda function to handle branch operations",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="sucursal_handler.handler",
-            code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env,
             timeout=Duration.seconds(10)  # Optional: Set a timeout for the Lambda function
@@ -106,7 +112,7 @@ class LambdaFunctions(Construct):
             description="Lambda function for custom authorization",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="simple_authorizer.handler",
-            code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[authorizer_layer],
             environment=env,
             timeout=Duration.seconds(10)
@@ -119,7 +125,7 @@ class LambdaFunctions(Construct):
             description="Lambda function to handle datos para factura",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="datos_factura_handler.handler",
-            code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env,
             timeout=Duration.seconds(10)  # Optional: Set a timeout for the Lambda function
@@ -132,7 +138,7 @@ class LambdaFunctions(Construct):
             description="Lambda function to handle tapetes operations",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="tapetes_handler.handler",
-            code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env_tapetes,
             timeout=Duration.seconds(10)  # Optional: Set a timeout for the Lambda function
@@ -145,7 +151,7 @@ class LambdaFunctions(Construct):
             description="Lambda function to handle folio operations",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="folio_handler.handler",
-            code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env,
             timeout=Duration.seconds(10)  # Optional: Set a timeout for the Lambda function
@@ -158,7 +164,7 @@ class LambdaFunctions(Construct):
             description="Lambda function to handle factura generation",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="genera_factura_handler.handler",
-            code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,
             timeout=Duration.seconds(10)
@@ -171,7 +177,7 @@ class LambdaFunctions(Construct):
             description="Lambda function to handle receptor operations",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="receptor_handler.handler",
-            code=lambda_.Code.from_asset("invoice_cdk/lambdas"),
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,
             timeout=Duration.seconds(10)

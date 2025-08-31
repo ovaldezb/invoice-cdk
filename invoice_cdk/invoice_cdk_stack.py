@@ -4,6 +4,7 @@ from aws_cdk import (
     aws_cognito as cognito  # Import cognito
 )
 from constructs import Construct
+from .angular_host_stack import AngularHost
 from .lambda_functions import LambdaFunctions
 from .cognito_construct import CognitoConstruct
 from .certificado_apigateway import CertificateApiGateway
@@ -31,3 +32,4 @@ class InvoiceCdkStack(Stack):
                             self.cognito_invoice.user_pool,
                             self.lambda_functions.custom_authorizer_lambda)
 
+        AngularHost(self, "AngularHostStack")

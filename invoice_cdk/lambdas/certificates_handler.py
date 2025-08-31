@@ -52,14 +52,14 @@ def handler(event, context):
             }
 
         elif http_method == "GET":
-            certificates = list_certificates(certificates_collection)
+            usuario = path_parameters.get("usuario")
+            certificates = list_certificates(usuario,certificates_collection)
             for cert in certificates:
                 cert["_id"] = str(cert["_id"])
                 cert["desde"] = str(cert["desde"])  # Convert ObjectId to string
                 cert["hasta"] = str(cert["hasta"])  # Convert ObjectId to string
                 sucursales = []
                 for sucursal_id in cert.get("sucursales", []):
-                    print(f"Fetching sucursal with ID: {sucursal_id}")
                     sucursal = get_sucursal_by_id(sucursal_id["_id"], sucursal_collection)
                     if sucursal:
                         sucursal["_id"] = str(sucursal["_id"])

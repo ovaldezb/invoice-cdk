@@ -1,6 +1,10 @@
 import json
 import os
-from db_receptor import guarda_receptor, obtiene_receptor_by_rfc
+from db_receptor import (
+    guarda_receptor, 
+    obtiene_receptor_by_rfc,
+    update_receptor
+    )
 from receptor import Receptor
 from pymongo import MongoClient
 from bson import json_util
@@ -33,6 +37,7 @@ def handler(event, context):
         receptor_id = path_parameters.get("id_receptor")
         receptor = obtiene_receptor_by_rfc(receptor_id, receptor_collection)
         if receptor:
+            print("Receptor found:", receptor)
             receptor["_id"] = str(receptor["_id"])
             return {
                 "statusCode": HTTPStatus.OK,
@@ -45,6 +50,17 @@ def handler(event, context):
                 "headers": headers,
                 "body": json_util.dumps({"error": "Receptor not found"})
             }
+    elif http_method == "PUT":
+        # Update a receptor by ID
+        receptor_id = path_parameters.get("id_receptor")
+        receptor_data = json.loads(body)
+        receptor_updated = update_receptor(receptor_id, receptor_data, receptor_collection)
+        return {
+            "statusCode": HTTPStatus.OK,
+            "headers": headers,
+            "body": json_util.dumps(receptor_updated)
+        }
+
     else:
         return {
             "statusCode": HTTPStatus.BAD_REQUEST,

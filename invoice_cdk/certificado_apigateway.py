@@ -121,7 +121,7 @@ class CertificateApiGateway(Construct):
 
         # Sucursal methods (CON CUSTOM AUTHORIZER)
         sucursales_resource.add_method("POST", sucursal_integration)
-        sucursales_resource.add_method("GET", sucursal_integration)
+        sucursales_resource.add_method("GET", sucursal_integration, authorizer=authorizer)
         sucursal_id_resource.add_method("GET", sucursal_integration)
         sucursal_id_resource.add_method("PUT", sucursal_integration)
         sucursal_id_resource.add_method("DELETE", sucursal_integration)
@@ -143,3 +143,4 @@ class CertificateApiGateway(Construct):
         #Datos Receptor methods (CON CUSTOM AUTHORIZER)
         receptor_resource.add_method("POST", receptor_integration)
         receptor_id_resource.add_method("GET", receptor_integration)
+        receptor_id_resource.add_method("PUT", receptor_integration)
