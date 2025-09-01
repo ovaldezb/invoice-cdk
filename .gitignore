@@ -12,6 +12,6 @@ cdk.out
 .env
 /requirements
 /python
-/lambda_layers
+/lambda_layers/python
 layer.zip
 /authorizer_layer

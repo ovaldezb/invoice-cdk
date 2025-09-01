@@ -1,9 +1,9 @@
 import json
 import base64
-import io
-import cgi
 import os
 import requests
+import hashlib
+from requests_toolbelt.multipart import decoder
 
 SW_USER_NAME = os.getenv("SW_USER_NAME")
 SW_USER_PASSWORD = os.getenv("SW_USER_PASSWORD")
@@ -23,37 +23,48 @@ def handler(event, context):
                 "statusCode": 405,
                 "body": json.dumps({"error": "Method Not Allowed"})
             }
-        
-        content_type = event["headers"].get("Content-Type") or event["headers"].get("content-type")
-        body = event.get("body")
-        if event.get("isBase64Encoded"):
-            body = base64.b64decode(body)
-        else:
-            body = body.encode()
-        
-        environ = {
-            'REQUEST_METHOD': 'POST',
-            'CONTENT_TYPE': content_type,
-            'CONTENT_LENGTH': str(len(body))
-        }
-        fp = io.BytesIO(body)
-        form = cgi.FieldStorage(fp=fp, environ=environ, keep_blank_values=True)
-        print("Datos del formulario:", form["key"])
-        b64_key = form["key"].file.read()
-        b64_cer = form["cer"].file.read()
-        ctrsn = form["ctrsn"].value
+        print("Event recibido:", event["body"])
 
-        if not b64_key or not b64_cer or not ctrsn:
+        if event.get("isBase64Encoded"):
+            print("Body está en Base64, decodificando.")
+            body = base64.b64decode(event["body"])
+        else:
+            print("Body no está en Base64, procesando directamente.")
+            body = event["body"].encode() 
+        print("Body procesado:", body[:100])  # Imprime los primeros 100 caracteres para evitar logs muy largos
+        content_type = event["headers"].get("Content-Type") or event["headers"].get("content-type")
+        #print("Content-Type:", content_type)
+        multipart_data = decoder.MultipartDecoder(body, content_type)
+        key_bytes = None
+        cer_bytes = None
+        ctrsn = None
+        for part in multipart_data.parts:
+            content_disposition = part.headers[b"Content-Disposition"].decode()
+            #print("Part Content-Disposition:", content_disposition)
+            if 'name="key"' in content_disposition:
+                key_bytes = part.content
+            elif 'name="cer"' in content_disposition:
+                cer_bytes = part.content
+            elif 'name="ctrsn"' in content_disposition:
+                ctrsn = part.text
+
+        if not key_bytes or not cer_bytes or not ctrsn:
             return {
                 "statusCode": 400,
                 "body": json.dumps({"error": "Missing parameters"}),
                 "headers": headers
             }
+        print("Tamaño key:", len(key_bytes))
+        print("Tamaño cer:", len(cer_bytes))
+        print("MD5 key:", hashlib.md5(key_bytes).hexdigest())
+        print("MD5 cer:", hashlib.md5(cer_bytes).hexdigest())
+        b64_key = base64.b64encode(key_bytes).decode("utf-8")
+        b64_cer = base64.b64encode(cer_bytes).decode("utf-8")
 
         cert_body = {
             "type":"stamp",
-            "b64key": base64.b64encode(b64_key).decode("utf-8"),
-            "b64cer": base64.b64encode(b64_cer).decode("utf-8"),
+            "b64Cer": b64_cer,
+            "b64Key": b64_key,
             "password": ctrsn
         }
         print("Certificado preparado para envío:")
@@ -63,7 +74,7 @@ def handler(event, context):
                 headers={"Content-Type": APPLICATION_JSON},
                 data=json.dumps({"user": SW_USER_NAME, "password": SW_USER_PASSWORD})
             ).json()
-
+        print("Token {}".format(sw_token.get('data').get('token')))
         agrega_certificado = requests.post(
             f"{SW_URL}/certificates/save",
             headers={
