@@ -30,7 +30,12 @@ class CertificateApiGateway(Construct):
                 "allow_methods": ['OPTIONS','GET','POST','PUT','DELETE'],
                 "allow_headers": ["Content-Type", "X-Amz-Date", "Authorization", "X-Api-Key", "X-Amz-Security-Token"],
                 "allow_credentials": True
-            }
+            },
+            binary_media_types=[
+                "application/x-x509-ca-cert",
+                "application/x-iwork-keynote-sffkey",
+                "multipart/form-data"
+            ]
         )
 
         # Create authorizer (preferir custom authorizer si está disponible)

@@ -4,6 +4,9 @@ import os
 import requests
 import hashlib
 from requests_toolbelt.multipart import decoder
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+
 
 SW_USER_NAME = os.getenv("SW_USER_NAME")
 SW_USER_PASSWORD = os.getenv("SW_USER_PASSWORD")
@@ -23,15 +26,11 @@ def handler(event, context):
                 "statusCode": 405,
                 "body": json.dumps({"error": "Method Not Allowed"})
             }
-        print("Event recibido:", event["body"])
-
         if event.get("isBase64Encoded"):
-            print("Body está en Base64, decodificando.")
             body = base64.b64decode(event["body"])
         else:
-            print("Body no está en Base64, procesando directamente.")
             body = event["body"].encode() 
-        print("Body procesado:", body[:100])  # Imprime los primeros 100 caracteres para evitar logs muy largos
+        
         content_type = event["headers"].get("Content-Type") or event["headers"].get("content-type")
         #print("Content-Type:", content_type)
         multipart_data = decoder.MultipartDecoder(body, content_type)
@@ -54,10 +53,19 @@ def handler(event, context):
                 "body": json.dumps({"error": "Missing parameters"}),
                 "headers": headers
             }
-        print("Tamaño key:", len(key_bytes))
-        print("Tamaño cer:", len(cer_bytes))
-        print("MD5 key:", hashlib.md5(key_bytes).hexdigest())
-        print("MD5 cer:", hashlib.md5(cer_bytes).hexdigest())
+        
+        cert = x509.load_der_x509_certificate(cer_bytes, default_backend())
+        serial_number = cert.serial_number
+        subject = cert.subject.rfc4514_string()
+        issuer = cert.issuer.rfc4514_string()
+        not_before = cert.not_valid_before
+        not_after = cert.not_valid_after
+        print("Número de serie:", serial_number)
+        print("Sujeto:", subject)
+        print("Emisor:", issuer)
+        print("Válido desde:", not_before)
+        print("Válido hasta:", not_after)
+        
         b64_key = base64.b64encode(key_bytes).decode("utf-8")
         b64_cer = base64.b64encode(cer_bytes).decode("utf-8")
 
@@ -67,8 +75,7 @@ def handler(event, context):
             "b64Key": b64_key,
             "password": ctrsn
         }
-        print("Certificado preparado para envío:")
-        print(cert_body)
+        
         sw_token = requests.post(
                 f"{SW_URL}/v2/security/authenticate",
                 headers={"Content-Type": APPLICATION_JSON},
