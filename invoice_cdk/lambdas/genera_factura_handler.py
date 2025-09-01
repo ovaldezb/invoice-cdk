@@ -43,7 +43,7 @@ def handler(event, context):
                 headers={"Content-Type": APPLICATION_JSON},
                 data=json.dumps({"user": SW_USER_NAME, "password": SW_USER_PASSWORD})
             ).json()
-            print(sw_token)
+            
             factura_generada = requests.post(
                 f"{SW_URL}/v3/cfdi33/issue/json/v4",
                 headers={"Content-Type": "application/jsontoxml","Authorization": f"Bearer {sw_token.get('data').get('token')}"},  # Fixed token extraction

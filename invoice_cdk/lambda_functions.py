@@ -13,6 +13,7 @@ class LambdaFunctions(Construct):
     folio_lambda: lambda_.Function
     genera_factura_lambda: lambda_.Function
     receptor_lambda: lambda_.Function
+    agrega_certificado_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -44,6 +45,12 @@ class LambdaFunctions(Construct):
             "DB_NAME": env_vars.get("MONGO_DB"),
         }
 
+        env_cert = {
+            "SW_USER_NAME": env_vars.get("SW_USER_NAME"),
+            "SW_USER_PASSWORD": env_vars.get("SW_USER_PASSWORD"),
+            "SW_URL": env_vars.get("SW_URL"),
+        }
+
         pymongo_layer = lambda_.LayerVersion(
             self, "pymongo-layer",
             code=lambda_.Code.from_asset("lambda_layers"),  # Directory with requirements
@@ -68,6 +75,7 @@ class LambdaFunctions(Construct):
         self.create_folio_lambda(env, pymongo_layer)
         self.create_genera_factura_lambda(env_fact, pymongo_layer)
         self.create_receptor_lambda(env, pymongo_layer)
+        self.create_agrega_certificado_lambda(env_cert, pymongo_layer)
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -177,6 +185,19 @@ class LambdaFunctions(Construct):
             description="Lambda function to handle receptor operations",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="receptor_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(10)
+        )
+
+    def create_agrega_certificado_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.agrega_certificado_lambda = lambda_.Function(
+            self, "AgregaCertificadoLambda",
+            function_name="agrega-certificado-lambda-invoice",
+            description="Lambda function to handle adding certificates",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="agrega_certificado_handler.handler",
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,

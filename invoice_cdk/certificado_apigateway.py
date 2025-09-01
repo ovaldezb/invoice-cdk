@@ -14,6 +14,7 @@ class CertificateApiGateway(Construct):
                  folio_lambda: _lambda.Function, 
                  genera_factura_lambda: _lambda.Function,
                  receptor_lambda: _lambda.Function,
+                 agrega_certificado_lambda: _lambda.Function,
                  invoice_pool: cognito.UserPool, 
                  custom_authorizer_lambda: _lambda.Function = None):
         super().__init__(scope, id)
@@ -76,6 +77,9 @@ class CertificateApiGateway(Construct):
         receptor_resource = api.root.add_resource("receptor")
         receptor_id_resource = receptor_resource.add_resource("{id_receptor}")
 
+        #Agrega Certificado resource
+        agrega_certificado_resource = api.root.add_resource("agrega-certificado")   
+
         # Integrations
         certificate_integration = apigw.LambdaIntegration(
             certificate_lambda,
@@ -112,6 +116,11 @@ class CertificateApiGateway(Construct):
             request_templates={"application/json": '{ "statusCode": "200" }'}
         )
 
+        agrega_certificado_integration = apigw.LambdaIntegration(
+            agrega_certificado_lambda,
+            request_templates={"application/json": '{ "statusCode": "200" }'}
+        )
+
         # Certificate methods (CON CUSTOM AUTHORIZER)
         certificates_resource.add_method("POST", certificate_integration, authorizer=authorizer)
         certificates_resource.add_method("GET", certificate_integration, authorizer=authorizer)
@@ -143,3 +152,6 @@ class CertificateApiGateway(Construct):
         receptor_resource.add_method("POST", receptor_integration)
         receptor_id_resource.add_method("GET", receptor_integration)
         receptor_id_resource.add_method("PUT", receptor_integration)
+
+        # Agrega Certificado methods
+        agrega_certificado_resource.add_method("POST", agrega_certificado_integration)
