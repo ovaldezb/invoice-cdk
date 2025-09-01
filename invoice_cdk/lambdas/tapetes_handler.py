@@ -6,8 +6,10 @@ from db_certificado import get_certificate_by_id
 from db_datos_factura import get_descripcion_by_clave
 from pymongo import MongoClient
 
-user_name = os.getenv("USER_NAME")
-password = os.getenv("PASSWORD")
+APPLICATION_JSON = "application/json"
+
+user_name = os.getenv("TAPETES_USER_NAME")
+password = os.getenv("TAPETES_PASSWORD")
 tapetes_api_url = os.getenv("TAPETES_API_URL")
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client[os.getenv("DB_NAME")]
@@ -42,7 +44,7 @@ def handler(event, context):
             ticket = path_parameters["ticket"]
             venta = requests.post(
                 f"{tapetes_api_url}tickets",
-                headers={"Accept": "application/json", "Content-Type": "application/json", "Authorization": f"Bearer {token}"},
+                headers={"Accept": APPLICATION_JSON, "Content-Type": APPLICATION_JSON   , "Authorization": f"Bearer {token}"},
                 data=json.dumps({"ticket": ticket})
             )
             venta_respuesta = venta.json()

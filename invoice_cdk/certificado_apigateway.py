@@ -5,7 +5,7 @@ from aws_cdk import (
     aws_cognito as cognito
 )
 from constructs import Construct
-
+APPLICATION_JSON = "application/json"
 class CertificateApiGateway(Construct):
     def __init__(self, scope: Construct, id: str, certificate_lambda: _lambda.Function, 
                  sucursal_lambda: _lambda.Function, 
@@ -88,46 +88,45 @@ class CertificateApiGateway(Construct):
         # Integrations
         certificate_integration = apigw.LambdaIntegration(
             certificate_lambda,
-            request_templates={"application/json": '{ "statusCode": "200" }'}
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
         sucursal_integration = apigw.LambdaIntegration(
             sucursal_lambda,
-            request_templates={"application/json": '{ "statusCode": "200" }'}
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
         datos_factura_integration = apigw.LambdaIntegration(
             datos_factura_lambda,
-            request_templates={"application/json": '{ "statusCode": "200" }'}
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
         tapetes_integration = apigw.LambdaIntegration(
             tapetes_lambda,
-            request_templates={"application/json": '{ "statusCode": "200" }'}
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )   
 
         folio_integration = apigw.LambdaIntegration(
             folio_lambda,
-            request_templates={"application/json": '{ "statusCode": "200" }'}
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
         genera_factura_integration = apigw.LambdaIntegration(
             genera_factura_lambda,
-            request_templates={"application/json": '{ "statusCode": "200" }'}
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
         receptor_integration = apigw.LambdaIntegration(
             receptor_lambda,
-            request_templates={"application/json": '{ "statusCode": "200" }'}
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
         agrega_certificado_integration = apigw.LambdaIntegration(
             agrega_certificado_lambda,
-            request_templates={"application/json": '{ "statusCode": "200" }'}
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
         # Certificate methods (CON CUSTOM AUTHORIZER)
-        certificates_resource.add_method("POST", certificate_integration, authorizer=authorizer)
         certificates_resource.add_method("GET", certificate_integration, authorizer=authorizer)
         certificate_id_resource.add_method("GET", certificate_integration, authorizer=authorizer)
         certificate_id_resource.add_method("PUT", certificate_integration, authorizer=authorizer)

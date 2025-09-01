@@ -4,14 +4,13 @@ from pymongo import MongoClient
 from bson import json_util
 from http import HTTPStatus
 from db_certificado import (
-    add_certificate,
     update_certificate,
     list_certificates,
     delete_certificate,
     get_certificate_by_id
 )
 from db_sucursal import(get_sucursal_by_id, delete_sucursal)
-from certificate import Certificado
+
 
 
 client = MongoClient(os.getenv("MONGODB_URI"))
@@ -30,17 +29,7 @@ def handler(event, context):
     body = event.get("body")
     
     try:
-        if http_method == "POST":
-            certificate_data = json.loads(body)
-            certificate = Certificado(**certificate_data)
-            cert_id = add_certificate(certificate, certificates_collection)
-            return {
-                "statusCode": HTTPStatus.CREATED,
-                "body": json.dumps({"message": "Certificate added", "id": str(cert_id)}),
-                "headers": headers
-            }
-
-        elif http_method == "PUT": 
+        if http_method == "PUT": 
             cert_id = path_parameters["id"]
             updated_data = json.loads(body)
             del updated_data["_id"]

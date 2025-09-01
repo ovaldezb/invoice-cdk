@@ -10,8 +10,8 @@ from factura_emitida import FacturaEmitida
 SW_USER_NAME = os.getenv("SW_USER_NAME")
 SW_USER_PASSWORD = os.getenv("SW_USER_PASSWORD")
 SW_URL = os.getenv("SW_URL")
-USER_NAME_CLIENT = os.getenv("USER_NAME")
-PASSWORD_CLIENT = os.getenv("PASSWORD")
+USER_NAME_CLIENT = os.getenv("TAPETES_USER_NAME")
+PASSWORD_CLIENT = os.getenv("TAPETES_PASSWORD")
 tapetes_api_url = os.getenv("TAPETES_API_URL")
 
 client = MongoClient(os.getenv("MONGODB_URI"))
