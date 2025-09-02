@@ -79,7 +79,7 @@ def handler(event, context):
                                 "ruso"     : timbrado['Receptor']['UsoCFDI'],
                                 "rregimen" : timbrado['Receptor']['RegimenFiscalReceptor'],
                                 "rcp"      : timbrado['Receptor']['DomicilioFiscalReceptor'],
-                                "tickets"  : [ticket],
+                                "tickets"  : ticket,
                                 "fecha"    : factura_generada.get("data").get("fechaTimbrado"),
                                 "servicio" : "ChipoSoft Corp.",
                                 "xml_cfdi" : pretty_xml, 
