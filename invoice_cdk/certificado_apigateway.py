@@ -39,22 +39,12 @@ class CertificateApiGateway(Construct):
         )
 
         # Create authorizer (preferir custom authorizer si está disponible)
-        if custom_authorizer_lambda:
-            authorizer = apigw.TokenAuthorizer(
-                self,
-                "CustomTokenAuthorizer",
-                handler=custom_authorizer_lambda,
-                authorizer_name="CustomInvoiceAuthorizer"
-            )
-        else:
-            # Fallback a Cognito User Pool authorizer
-            authorizer = apigw.CognitoUserPoolsAuthorizer(
-                self,
-                "InvoiceAPIAuthorizer",
-                cognito_user_pools=[invoice_pool],
-                authorizer_name="InvoiceAuthorizer",
-                identity_source="method.request.header.Authorization"
-            )
+        authorizer = apigw.TokenAuthorizer(
+            self,
+            "CustomTokenAuthorizer",
+            handler=custom_authorizer_lambda,
+            authorizer_name="CustomInvoiceAuthorizer"
+        )
 
         # Certificates resources
         certificates_resource = api.root.add_resource("certificados")

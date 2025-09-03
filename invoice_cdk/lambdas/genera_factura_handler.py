@@ -94,6 +94,8 @@ def handler(event, context):
             factura_generada["data"]["sucursal"]=sucursal
             factura_generada["data"]["idSucursal"]=id_sucursal
 
+            print('Factura Generada:'.factura_generada)
+
             factura_emitida_id = guarda_factura_emitida(FacturaEmitida(**factura_generada["data"]), facturas_emitidas_collection).inserted_id
             print(f"Factura emitida guardada con ID: {factura_emitida_id}")
             return {

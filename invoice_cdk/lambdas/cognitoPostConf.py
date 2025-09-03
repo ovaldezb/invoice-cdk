@@ -1,7 +1,6 @@
 import boto3
 
 def handler(event, context):
-    print(event)
     client = boto3.client("cognito-idp")
     user_name = event['userName']
     user_pool_id = event['userPoolId']
