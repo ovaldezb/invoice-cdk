@@ -46,11 +46,9 @@ def handler(event, context):
         elif http_method == "PUT":
             sucursal = path_parameters.get("sucursal")
             folio = folio_collection.find_one({"sucursal": sucursal})
-            print("Current folio:", folio)
             folio["noFolio"] += 1
             folio_collection.update_one({"sucursal": sucursal}, {"$set": folio})
             folio_updated = folio_collection.find_one({"sucursal": sucursal})
-            print("Updated folio:", folio_updated)
             folio_updated["_id"] = str(folio_updated["_id"])
             return {
                 "statusCode": 200,
