@@ -15,7 +15,6 @@ class CertificateApiGateway(Construct):
                  genera_factura_lambda: _lambda.Function,
                  receptor_lambda: _lambda.Function,
                  agrega_certificado_lambda: _lambda.Function,
-                 invoice_pool: cognito.UserPool, 
                  custom_authorizer_lambda: _lambda.Function = None):
         super().__init__(scope, id)
 
@@ -117,13 +116,13 @@ class CertificateApiGateway(Construct):
         )
 
         # Certificate methods (CON CUSTOM AUTHORIZER)
-        certificates_resource.add_method("GET", certificate_integration, authorizer=authorizer)
+        certificates_resource.add_method("GET", certificate_integration)
         certificate_id_resource.add_method("GET", certificate_integration, authorizer=authorizer)
-        certificate_id_resource.add_method("PUT", certificate_integration, authorizer=authorizer)
+        certificate_id_resource.add_method("PUT", certificate_integration)
         certificate_id_resource.add_method("DELETE", certificate_integration, authorizer=authorizer)
 
         # Sucursal methods (CON CUSTOM AUTHORIZER)
-        sucursales_resource.add_method("POST", sucursal_integration, authorizer=authorizer)
+        sucursales_resource.add_method("POST", sucursal_integration)
         sucursal_id_resource.add_method("GET", sucursal_integration, authorizer=authorizer)
         sucursal_id_resource.add_method("PUT", sucursal_integration, authorizer=authorizer)
         sucursal_id_resource.add_method("DELETE", sucursal_integration, authorizer=authorizer)

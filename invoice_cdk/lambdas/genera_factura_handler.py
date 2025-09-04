@@ -35,7 +35,7 @@ def handler(event, context):
         timbrado = body['timbrado']
         sucursal = body['sucursal']
         ticket = body['ticket'] 
-        id_sucursal = body['idSucursal']
+        id_certificado = body['idCertificado']
 
         if http_method == "POST":
             sw_token = requests.post(
@@ -91,17 +91,15 @@ def handler(event, context):
                 headers={"Accept": APPLICATION_JSON, "Content-Type": APPLICATION_JSON, "Authorization": f"Bearer {token}"},
                 data=body_envio_endpoint
             )
+            
             factura_generada["data"]["sucursal"]=sucursal
-            factura_generada["data"]["idSucursal"]=id_sucursal
-
-            print('Factura Generada:'.factura_generada)
-
-            factura_emitida_id = guarda_factura_emitida(FacturaEmitida(**factura_generada["data"]), facturas_emitidas_collection).inserted_id
-            print(f"Factura emitida guardada con ID: {factura_emitida_id}")
+            factura_generada["data"]["idCertificado"]=id_certificado
+            guarda_factura_emitida(FacturaEmitida(**factura_generada["data"]), facturas_emitidas_collection)
+            
             return {
                 "statusCode": 200,
                 "headers": headers,
-                "body": json.dumps(factura_generada)
+                "body": json.dumps(factura_generada["data"])
             }
 
     except Exception as e:

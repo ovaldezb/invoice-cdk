@@ -27,10 +27,11 @@ def handler(event, context):
     http_method = event["httpMethod"]
     path_parameters = event.get("pathParameters")
     body = event.get("body")
-    
+    print(f"Received event: {event}")
     try:
         if http_method == "PUT": 
             cert_id = path_parameters["id"]
+            print(f"Updating certificate with ID: {cert_id} and data: {body}")
             updated_data = json.loads(body)
             del updated_data["_id"]
             update_certificate(cert_id, updated_data, certificates_collection)
