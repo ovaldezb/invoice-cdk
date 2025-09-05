@@ -8,16 +8,13 @@ from requests_toolbelt.multipart import decoder
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from pymongo import MongoClient
-from db_certificado import add_certificate  
+  
 
 
 SW_USER_NAME = os.getenv("SW_USER_NAME")
 SW_USER_PASSWORD = os.getenv("SW_USER_PASSWORD")
 SW_URL = os.getenv("SW_URL")
 
-client = MongoClient(os.getenv("MONGODB_URI"))
-db = client[os.getenv("DB_NAME")]
-certificates_collection = db["certificates"]
 
 APPLICATION_JSON = "application/json"
 headers = {
@@ -115,7 +112,7 @@ def handler(event, context):
             sucursales=[],
             usuario=usuario
         )
-        add_certificate(certificado, certificates_collection)
+        #add_certificate(certificado, certificates_collection)
 
         return {
             "statusCode": 200,

@@ -116,6 +116,7 @@ class CertificateApiGateway(Construct):
         )
 
         # Certificate methods (CON CUSTOM AUTHORIZER)
+        certificates_resource.add_method("POST", certificate_integration)
         certificates_resource.add_method("GET", certificate_integration)
         certificate_id_resource.add_method("GET", certificate_integration, authorizer=authorizer)
         certificate_id_resource.add_method("PUT", certificate_integration)
@@ -123,9 +124,9 @@ class CertificateApiGateway(Construct):
 
         # Sucursal methods (CON CUSTOM AUTHORIZER)
         sucursales_resource.add_method("POST", sucursal_integration)
-        sucursal_id_resource.add_method("GET", sucursal_integration, authorizer=authorizer)
-        sucursal_id_resource.add_method("PUT", sucursal_integration, authorizer=authorizer)
-        sucursal_id_resource.add_method("DELETE", sucursal_integration, authorizer=authorizer)
+        sucursal_id_resource.add_method("GET", sucursal_integration)
+        sucursal_id_resource.add_method("PUT", sucursal_integration)
+        sucursal_id_resource.add_method("DELETE", sucursal_integration)
 
         # Datos Factura methods
         datos_factura.add_method("GET", datos_factura_integration)

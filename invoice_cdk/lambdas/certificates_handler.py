@@ -4,19 +4,21 @@ from pymongo import MongoClient
 from bson import json_util
 from http import HTTPStatus
 from db_certificado import (
+    Certificado,
     update_certificate,
     list_certificates,
     delete_certificate,
     get_certificate_by_id
 )
 from db_sucursal import(get_sucursal_by_id, delete_sucursal)
-
+from db_certificado import add_certificate
 
 
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client[os.getenv("DB_NAME")]
 certificates_collection = db["certificates"]
 sucursal_collection = db["sucursales"]
+
 
 headers = {
     "Content-Type": "application/json",
@@ -27,11 +29,27 @@ def handler(event, context):
     http_method = event["httpMethod"]
     path_parameters = event.get("pathParameters")
     body = event.get("body")
-    print(f"Received event: {event}")
     try:
-        if http_method == "PUT": 
+        if http_method == "POST":
+            data = json.loads(body)
+            print(f'data received: {data}')
+            certificado = Certificado(
+                nombre=data["nombre"],
+                rfc=data["rfc"],
+                no_certificado=data["no_certificado"],
+                desde=data["desde"],
+                hasta=data["hasta"],
+                sucursales=[],
+                usuario=data["usuario"]
+            )
+            new_certificate = add_certificate(certificado, certificates_collection)
+            return {
+                "statusCode": HTTPStatus.CREATED,
+                "body": json.dumps({"message": "Certificate added", "id": str(new_certificate)}),
+                "headers": headers
+            }
+        elif http_method == "PUT": 
             cert_id = path_parameters["id"]
-            print(f"Updating certificate with ID: {cert_id} and data: {body}")
             updated_data = json.loads(body)
             del updated_data["_id"]
             update_certificate(cert_id, updated_data, certificates_collection)
@@ -43,7 +61,7 @@ def handler(event, context):
 
         elif http_method == "GET":
             usuario = path_parameters.get("id")
-            print(usuario)
+            #print(usuario)
             certificates = list_certificates(usuario,certificates_collection)
             for cert in certificates:
                 cert["_id"] = str(cert["_id"])

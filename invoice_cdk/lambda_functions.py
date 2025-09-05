@@ -48,9 +48,7 @@ class LambdaFunctions(Construct):
         env_cert = {
             "SW_USER_NAME": env_vars.get("SW_USER_NAME"),
             "SW_USER_PASSWORD": env_vars.get("SW_USER_PASSWORD"),
-            "SW_URL": env_vars.get("SW_URL"),
-            "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
-            "DB_NAME": env_vars.get("MONGO_DB"),
+            "SW_URL": env_vars.get("SW_URL")
         }
 
         pymongo_layer = lambda_.LayerVersion(
