@@ -1,11 +1,14 @@
 import base64
 import os
 import json
+import traceback
 import requests
 import xml.dom.minidom
+from cfdi_pdf_fpdf_generator import CFDIPDF_FPDF_Generator
 from pymongo import MongoClient
 from db_datos_factura import guarda_factura_emitida
 from factura_emitida import FacturaEmitida
+
 
 SW_USER_NAME = os.getenv("SW_USER_NAME")
 SW_USER_PASSWORD = os.getenv("SW_USER_PASSWORD")
@@ -111,12 +114,24 @@ def handler(event, context):
             factura_generada["data"]["sucursal"]=sucursal
             factura_generada["data"]["idCertificado"]=id_certificado
             guarda_factura_emitida(FacturaEmitida(**factura_generada["data"]), facturas_emitidas_collection)
-            #7. Retornar la factura generada a la página
+            #7 Generar PDF de la factura
+            
+            cfdi = factura_generada["data"]["cfdi"]
+            qrCode = factura_generada["data"]["qrCode"]
+            print(f'Factura generada: {cfdi}')
+            print(f'QR Code: {qrCode}')
+            pdf_bytes = CFDIPDF_FPDF_Generator(cfdi, qrCode).generate_pdf()
+            pdf_b64 = base64.b64encode(pdf_bytes).decode('utf-8')
+            #8. Retornar la factura generada a la página
             return {
                 "statusCode": 200,
                 "headers": headers,
-                "body": json.dumps(factura_generada["data"])
+                "body": json.dumps({
+                    **factura_generada["data"],
+                    "pdf_cfdi_b64": pdf_b64
+                    })
             }
 
     except Exception as e:
         print(f"Error: {str(e)}")
+        traceback.print_exc()

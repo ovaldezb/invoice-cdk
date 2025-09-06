@@ -35,7 +35,6 @@ def handler(event, context):
             body = event["body"].encode() 
         
         content_type = event["headers"].get("Content-Type") or event["headers"].get("content-type")
-        #print("Content-Type:", content_type)
         multipart_data = decoder.MultipartDecoder(body, content_type)
         key_bytes = None
         cer_bytes = None
@@ -93,7 +92,6 @@ def handler(event, context):
                 data=json.dumps({"user": SW_USER_NAME, "password": SW_USER_PASSWORD})
             ).json()
         
-        
         requests.post(
             f"{SW_URL}/certificates/save",
             headers={
@@ -112,7 +110,6 @@ def handler(event, context):
             sucursales=[],
             usuario=usuario
         )
-        #add_certificate(certificado, certificates_collection)
 
         return {
             "statusCode": 200,
