@@ -4,6 +4,7 @@ from fpdf import FPDF
 import xml.etree.ElementTree as ET
 import io
 from num2words import num2words
+from tufan_logo import tufan_logo_base64
 class CFDIPDF_FPDF_Generator():
     def __init__(self, xml_string: str, qrCode: str, cadena_original_sat: str, noTicket: str, fecha_hora_venta: str) -> None:
         self.xml_string = xml_string
@@ -67,53 +68,56 @@ class CFDIPDF_FPDF_Generator():
         pdf.line(10, pdf.get_y(), 200, pdf.get_y())  # Línea de 10mm a 200mm en la posición vertical actual
         
         # Emisor/Receptor
-        pdf.image('Logo-Tufan.png', x=10, y=18, w=40)  # Ajusta la ruta y tamaño del logo según sea necesario
+        #pdf.image('Logo-Tufan.png', x=10, y=18, w=40)  # Ajusta la ruta y tamaño del logo según sea necesario
+        image_bytes = base64.b64decode(tufan_logo_base64())
+        with tempfile.NamedTemporaryFile(delete=True, suffix=".png") as tmp_img:
+            tmp_img.write(image_bytes)
+            tmp_img.flush()
+            pdf.image(tmp_img.name, x=10, y=18, w=40)
         pdf.set_font("Arial", '', 8)
         emisor = self.data['emisor']
-        
-        emisor = self.data['emisor']
-        emisor_textos = [
-            emisor.get('Nombre',''), 
-            emisor.get('Rfc',''),
-            'BLVRD. ADOLFO LOPEZ MATEOS 2930-24-25',
-            'COL.TIZAPAN ALVARO OBREGON,CDMX, C.P. 01090'
-            'Regimen Fiscal:',
-            emisor.get('RegimenFiscal','')
-        ]
+        pdf.cell(42,4, '')
+        pdf.cell(63,4, emisor.get('Nombre',''))
+        pdf.set_font("Arial", 'B', 8)
+        pdf.cell(30,4, 'Folio Fiscal:', align='R')
+        pdf.set_font("Arial", '', 8)
+        pdf.cell(55,4, self.data.get('uuid',''),align='L',ln=True)
 
-        datos_pares = [
-            ("Folio Fiscal:", self.data.get('uuid','')),
-            ("Serie Folio:", f"{self.data['serie']} {self.data['folio']}"),
-            ("Fecha y Hora:", self.fecha_hora_venta),
-            ("Tipo de Comprobante:", self.data['tipo_comprobante']),
-            ("Lugar de Expedición:", self.data['lugar_expedicion']),
-        ]
+        pdf.cell(42,4, '')
+        pdf.cell(63,4, emisor.get('Rfc',''))
+        pdf.set_font("Arial", 'B', 8)
+        pdf.cell(30,4, 'Serie y Folio:', align='R')
+        pdf.set_font("Arial", '', 8)
+        pdf.cell(55,4, f"{self.data['serie']} {self.data['folio']}",align='L',ln=True)
 
-        x_emisor = 55
-        x_fiscal = 110
-        w_title = 35
-        w_value = 55
-        line_height = 4
+        pdf.cell(42,4, '')
+        pdf.set_font("Arial", 'B', 5)
+        pdf.cell(63,4, 'BLVRD. ADOLFO LOPEZ MATEOS 2930-24-25',)
+        pdf.set_font("Arial", 'B', 8)
+        pdf.cell(30,4, 'Fecha y Hora:', align='R')
+        pdf.set_font("Arial", '', 8)
+        pdf.cell(55,4, self.fecha_hora_venta,align='L',ln=True)
 
-        max_rows = max(len(emisor_textos), len(datos_pares))
-        for i in range(max_rows):
-            y_actual = pdf.get_y()
-            # Columna Emisor
-            pdf.set_xy(x_emisor, y_actual)
-            pdf.set_font("Arial", '', 8)
-            pdf.cell(45, line_height, emisor_textos[i] if i < len(emisor_textos) else "", ln=False)
-            # Columna Fiscal (alineación especial)
-            if i < len(datos_pares):
-                titulo, valor = datos_pares[i]
-                pdf.set_xy(x_fiscal, y_actual)
-                pdf.set_font("Arial", 'B', 8)
-                pdf.cell(w_title, line_height, titulo, border=0, align='R', ln=False)
-                pdf.set_font("Arial", '', 8)
-                pdf.cell(w_value, line_height, valor, border=0, align='L', ln=True)
-            else:
-                pdf.set_xy(x_fiscal, y_actual)
-                pdf.cell(w_title + w_value, line_height, "", ln=True)
-        
+        pdf.cell(42,4, '')
+        pdf.set_font("Arial", 'B', 5)
+        pdf.cell(63,3, 'COL.TIZAPAN ALVARO OBREGON,CDMX, C.P. 01090',)
+        pdf.set_font("Arial", 'B', 8)
+        pdf.cell(30,4, 'Tipo de Comprobante:', align='R')
+        pdf.set_font("Arial", '', 8)
+        pdf.cell(55,4, self.data['tipo_comprobante'],align='L',ln=True)
+
+        pdf.cell(42,4, '')
+        pdf.set_font("Arial", '', 8)
+        pdf.cell(63,4, 'Regimen Fiscal',)
+        pdf.set_font("Arial", 'B', 8)
+        pdf.cell(30,4, 'Lugar Expedición:', align='R')
+        pdf.set_font("Arial", '', 8)
+        pdf.cell(55,4, self.data['lugar_expedicion'],align='L',ln=True)
+
+        pdf.cell(42,4, '')
+        pdf.set_font("Arial", '', 8)
+        pdf.cell(63,4, emisor.get('RegimenFiscal',''),ln=True)
+
         pdf.line(10, pdf.get_y(), 200, pdf.get_y())  
         pdf.ln(2)
         receptor = self.data['receptor']

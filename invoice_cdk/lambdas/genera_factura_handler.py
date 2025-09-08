@@ -40,15 +40,21 @@ def handler(event, context):
         sucursal = body['sucursal']
         ticket = body['ticket'] 
         id_certificado = body['idCertificado']
+        fecha_venta = body['fechaVenta']
         
         if http_method == "POST":
             #Estos son los pasos para generar la factura
             #1. Obtener el folio actual y actualizarlo, para evitar colisiones
             folio = folio_collection.find_one_and_update({"sucursal": sucursal}, {"$inc": {"noFolio": 1}}, return_document=True)
             #2. Asignar el folio al timbrado
+            if not folio:
+                return {
+                    "statusCode": 400,
+                    "headers": headers,
+                    "body": json.dumps({"message": f"No se encontró folio para la sucursal {sucursal}, favor contactar al administador"})
+                }
             timbrado['Folio'] = folio['noFolio']
             #3. Obtener el token de SW
-            
             sw_token = requests.post(
                 f"{SW_URL}/v2/security/authenticate",
                 headers={"Content-Type": APPLICATION_JSON},
@@ -118,9 +124,10 @@ def handler(event, context):
             
             cfdi = factura_generada["data"]["cfdi"]
             qrCode = factura_generada["data"]["qrCode"]
+            cadena_original_sat = factura_generada["data"]["cadenaOriginalSAT"]
             print(f'Factura generada: {cfdi}')
             print(f'QR Code: {qrCode}')
-            pdf_bytes = CFDIPDF_FPDF_Generator(cfdi, qrCode).generate_pdf()
+            pdf_bytes = CFDIPDF_FPDF_Generator(cfdi, qrCode,cadena_original_sat,ticket,fecha_venta).generate_pdf()
             pdf_b64 = base64.b64encode(pdf_bytes).decode('utf-8')
             #8. Retornar la factura generada a la página
             return {
