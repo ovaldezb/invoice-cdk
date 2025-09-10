@@ -1,5 +1,5 @@
 from bson.objectid import ObjectId
-from certificate import Certificado
+from models.certificate import Certificado
 
 
 def add_certificate(certificate: Certificado, certificates_collection) -> str:

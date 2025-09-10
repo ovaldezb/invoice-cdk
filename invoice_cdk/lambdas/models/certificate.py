@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime
-from sucursal import Sucursal
+from models.sucursal import Sucursal
 
 class Certificado(BaseModel):
     nombre: str

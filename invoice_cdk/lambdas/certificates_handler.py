@@ -1,24 +1,24 @@
 import json
 import os
+import traceback
 from pymongo import MongoClient
 from bson import json_util
 from http import HTTPStatus
-from db_certificado import (
+from dbaccess.db_certificado import (
     Certificado,
     update_certificate,
     list_certificates,
     delete_certificate,
-    get_certificate_by_id
+    get_certificate_by_id,
+    add_certificate
 )
-from db_sucursal import(get_sucursal_by_id, delete_sucursal)
-from db_certificado import add_certificate
+from dbaccess.db_sucursal import(get_sucursal_by_id, delete_sucursal)
 
 
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client[os.getenv("DB_NAME")]
 certificates_collection = db["certificates"]
 sucursal_collection = db["sucursales"]
-
 
 headers = {
     "Content-Type": "application/json",
@@ -61,7 +61,6 @@ def handler(event, context):
 
         elif http_method == "GET":
             usuario = path_parameters.get("id")
-            #print(usuario)
             certificates = list_certificates(usuario,certificates_collection)
             for cert in certificates:
                 cert["_id"] = str(cert["_id"])
@@ -93,16 +92,9 @@ def handler(event, context):
                 "body": json_util.dumps({"message": "Certificate deleted"}),
                 "headers": headers
             }
-
-        else:
-            return {
-                "statusCode": HTTPStatus.METHOD_NOT_ALLOWED,
-                "body": json.dumps({"message": "Method Not Allowed"}),
-                "headers": headers
-            }
-
     except Exception as e:
         print(f"Error: {str(e)}")
+        traceback.print_exc()
         return {
             "statusCode": HTTPStatus.INTERNAL_SERVER_ERROR,
             "body": json.dumps({"message": "Internal Server Error", "error": str(e)}),

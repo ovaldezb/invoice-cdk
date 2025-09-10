@@ -15,6 +15,7 @@ class CertificateApiGateway(Construct):
                  genera_factura_lambda: _lambda.Function,
                  receptor_lambda: _lambda.Function,
                  agrega_certificado_lambda: _lambda.Function,
+                 timbres_consumo_lambda: _lambda.Function,
                  custom_authorizer_lambda: _lambda.Function = None):
         super().__init__(scope, id)
 
@@ -74,6 +75,10 @@ class CertificateApiGateway(Construct):
         #Agrega Certificado resource
         agrega_certificado_resource = api.root.add_resource("agrega-certificado")   
 
+        # Consumo Timbres resource
+        timbres_consumo_resource = api.root.add_resource("timbres")
+        timbre_usuario_resource = timbres_consumo_resource.add_resource("{usuario}")
+
         # Integrations
         certificate_integration = apigw.LambdaIntegration(
             certificate_lambda,
@@ -115,6 +120,11 @@ class CertificateApiGateway(Construct):
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
+        consumo_timbres_integration = apigw.LambdaIntegration(
+            timbres_consumo_lambda,
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
+        )
+
         # Certificate methods (CON CUSTOM AUTHORIZER)
         certificates_resource.add_method("POST", certificate_integration)
         certificates_resource.add_method("GET", certificate_integration)
@@ -149,3 +159,6 @@ class CertificateApiGateway(Construct):
 
         # Agrega Certificado methods
         agrega_certificado_resource.add_method("POST", agrega_certificado_integration)
+
+        # Consumo Timbres methods
+        timbre_usuario_resource.add_method("GET", consumo_timbres_integration)

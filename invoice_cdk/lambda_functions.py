@@ -14,6 +14,7 @@ class LambdaFunctions(Construct):
     genera_factura_lambda: lambda_.Function
     receptor_lambda: lambda_.Function
     agrega_certificado_lambda: lambda_.Function
+    timbres_consumo_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -76,6 +77,7 @@ class LambdaFunctions(Construct):
         self.create_genera_factura_lambda(env_fact, pymongo_layer)
         self.create_receptor_lambda(env, pymongo_layer)
         self.create_agrega_certificado_lambda(env_cert, pymongo_layer)
+        self.create_timbres_consumo_lambda(env, pymongo_layer)
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -198,6 +200,19 @@ class LambdaFunctions(Construct):
             description="Lambda function to handle adding certificates",
             runtime=lambda_.Runtime.PYTHON_3_12,
             handler="agrega_certificado_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(10)
+        )
+
+    def create_timbres_consumo_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.timbres_consumo_lambda = lambda_.Function(
+            self, "TimbresConsumoLambda",
+            function_name="timbres-consumo-lambda-invoice",
+            description="Lambda function to handle timbres consumo operations",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="consumo_timbres_handler.lambda_handler",
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,

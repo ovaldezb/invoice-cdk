@@ -2,15 +2,15 @@ import json
 import os
 from pymongo import MongoClient
 from http import HTTPStatus
-from db_sucursal import (
+from dbaccess.db_sucursal import (
     add_sucursal,
     update_sucursal,
     delete_sucursal,
     get_sucursal_by_codigo,
     get_sucursal_by_id
 )
-from db_certificado import (update_certificate, get_certificate_by_id)
-from sucursal import Sucursal
+from dbaccess.db_certificado import (update_certificate, get_certificate_by_id)
+from models.sucursal import Sucursal
 headers = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*"

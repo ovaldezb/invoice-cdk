@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 import json
 import os
-from folio import Folio
+from models.folio import Folio
 
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client[os.getenv("DB_NAME")]

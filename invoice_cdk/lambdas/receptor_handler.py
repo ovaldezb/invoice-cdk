@@ -1,11 +1,11 @@
 import json
 import os
-from db_receptor import (
+from dbaccess.db_receptor import (
     guarda_receptor, 
     obtiene_receptor_by_rfc,
     update_receptor
     )
-from receptor import Receptor
+from models.receptor import Receptor
 from pymongo import MongoClient
 from bson import json_util
 from http import HTTPStatus

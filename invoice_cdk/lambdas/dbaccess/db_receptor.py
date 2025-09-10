@@ -1,4 +1,4 @@
-from receptor import Receptor
+from models.receptor import Receptor
 
 def guarda_receptor(receptor: Receptor, receptor_collection):
     return receptor_collection.insert_one(receptor.dict()).inserted_id

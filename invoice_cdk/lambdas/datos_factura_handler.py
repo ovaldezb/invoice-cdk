@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 import json
 import os
-from db_datos_factura import(
+from dbaccess.db_datos_factura import(
     get_uso_cfdi,
     get_regimen_fiscal,
     get_forma_pago

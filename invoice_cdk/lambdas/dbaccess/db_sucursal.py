@@ -1,5 +1,5 @@
 from bson.objectid import ObjectId
-from sucursal import Sucursal
+from models.sucursal import Sucursal
 
 def get_sucursal_by_id(sucursal_id: str, sucursal_collection):
     return sucursal_collection.find_one({"_id": ObjectId(sucursal_id)})

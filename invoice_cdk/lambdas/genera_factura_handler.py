@@ -6,9 +6,8 @@ import requests
 import xml.dom.minidom
 from cfdi_pdf_fpdf_generator import CFDIPDF_FPDF_Generator
 from pymongo import MongoClient
-from db_datos_factura import guarda_factura_emitida
-from factura_emitida import FacturaEmitida
-
+from dbaccess.db_datos_factura import guarda_factura_emitida
+from models.factura_emitida import FacturaEmitida
 
 SW_USER_NAME = os.getenv("SW_USER_NAME")
 SW_USER_PASSWORD = os.getenv("SW_USER_PASSWORD")
@@ -119,15 +118,19 @@ def handler(event, context):
             #6. Guardar la factura generada en la base de datos
             factura_generada["data"]["sucursal"]=sucursal
             factura_generada["data"]["idCertificado"]=id_certificado
+            
             guarda_factura_emitida(FacturaEmitida(**factura_generada["data"]), facturas_emitidas_collection)
             #7 Generar PDF de la factura
             
             cfdi = factura_generada["data"]["cfdi"]
-            qrCode = factura_generada["data"]["qrCode"]
+            qr_code = factura_generada["data"]["qrCode"]
             cadena_original_sat = factura_generada["data"]["cadenaOriginalSAT"]
             print(f'Factura generada: {cfdi}')
-            print(f'QR Code: {qrCode}')
-            pdf_bytes = CFDIPDF_FPDF_Generator(cfdi, qrCode,cadena_original_sat,ticket,fecha_venta).generate_pdf()
+            print(f'QR Code: {qr_code}')
+            print(f'Cadena Original SAT: {cadena_original_sat}')
+            print(f'Ticket: {ticket}')
+            print(f'Fecha Venta: {fecha_venta}')
+            pdf_bytes = CFDIPDF_FPDF_Generator(cfdi, qr_code, cadena_original_sat, ticket, fecha_venta).generate_pdf()
             pdf_b64 = base64.b64encode(pdf_bytes).decode('utf-8')
             #8. Retornar la factura generada a la página
             return {
@@ -142,3 +145,8 @@ def handler(event, context):
     except Exception as e:
         print(f"Error: {str(e)}")
         traceback.print_exc()
+        return {
+            "statusCode": 500,
+            "headers": headers,
+            "body": json.dumps({"message": str(e)})
+        }

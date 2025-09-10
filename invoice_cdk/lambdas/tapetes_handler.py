@@ -1,9 +1,9 @@
 import json
 import os
 import requests
-from db_sucursal import get_sucursal_by_codigo
-from db_certificado import get_certificate_by_id
-from db_datos_factura import get_descripcion_by_clave
+from dbaccess.db_sucursal import get_sucursal_by_codigo
+from dbaccess.db_certificado import get_certificate_by_id
+from dbaccess.db_datos_factura import get_descripcion_by_clave
 from pymongo import MongoClient
 
 APPLICATION_JSON = "application/json"
