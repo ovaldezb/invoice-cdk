@@ -47,7 +47,8 @@ class LambdaFunctions(Construct):
             "SMTP_HOST": env_vars.get("SMTP_HOST"),
             "SMTP_PORT": env_vars.get("SMTP_PORT"),
             "SMTP_USER": env_vars.get("SMTP_USER"),
-            "SMTP_PASSWORD": env_vars.get("SMTP_PASSWORD")
+            "SMTP_PASSWORD": env_vars.get("SMTP_PASSWORD"),
+            "SMTP_FROM": env_vars.get("SMTP_FROM") 
         }
 
         env_cert = {
