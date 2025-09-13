@@ -44,6 +44,10 @@ class LambdaFunctions(Construct):
             "TAPETES_PASSWORD": env_vars.get("TAPETES_PASSWORD"),
             "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
             "DB_NAME": env_vars.get("MONGO_DB"),
+            "SMTP_HOST": env_vars.get("SMTP_HOST"),
+            "SMTP_PORT": env_vars.get("SMTP_PORT"),
+            "SMTP_USER": env_vars.get("SMTP_USER"),
+            "SMTP_PASSWORD": env_vars.get("SMTP_PASSWORD")
         }
 
         env_cert = {

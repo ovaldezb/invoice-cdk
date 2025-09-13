@@ -8,6 +8,7 @@ from cfdi_pdf_fpdf_generator import CFDIPDF_FPDF_Generator
 from pymongo import MongoClient
 from dbaccess.db_datos_factura import guarda_factura_emitida
 from models.factura_emitida import FacturaEmitida
+from email_sender import EmailSender
 
 SW_USER_NAME = os.getenv("SW_USER_NAME")
 SW_USER_PASSWORD = os.getenv("SW_USER_PASSWORD")
@@ -40,7 +41,8 @@ def handler(event, context):
         ticket = body['ticket'] 
         id_certificado = body['idCertificado']
         fecha_venta = body['fechaVenta']
-        
+        email_receptor = body['email']
+
         if http_method == "POST":
             #Estos son los pasos para generar la factura
             #1. Obtener el folio actual y actualizarlo, para evitar colisiones
@@ -125,14 +127,21 @@ def handler(event, context):
             cfdi = factura_generada["data"]["cfdi"]
             qr_code = factura_generada["data"]["qrCode"]
             cadena_original_sat = factura_generada["data"]["cadenaOriginalSAT"]
-            print(f'Factura generada: {cfdi}')
-            print(f'QR Code: {qr_code}')
-            print(f'Cadena Original SAT: {cadena_original_sat}')
-            print(f'Ticket: {ticket}')
-            print(f'Fecha Venta: {fecha_venta}')
             pdf_bytes = CFDIPDF_FPDF_Generator(cfdi, qr_code, cadena_original_sat, ticket, fecha_venta).generate_pdf()
             pdf_b64 = base64.b64encode(pdf_bytes).decode('utf-8')
-            #8. Retornar la factura generada a la página
+            #8. Envia correo
+            email = EmailSender()
+            result = email.send_invoice(
+                recipient_email=email_receptor,
+                pdf_base64=pdf_b64,
+                cfdi_xml=pretty_xml,
+                pdf_filename=f"factura_{timbrado['Serie']}{timbrado['Folio']}.pdf",
+                xml_filename=f"cfdi_{timbrado['Serie']}{timbrado['Folio']}.xml",
+                subject=f"Factura {timbrado['Serie']}{timbrado['Folio']}",
+                body_text="Adjunto factura en PDF y XML"
+            )
+            print(f"Email sent: {result}")
+            #9. Retornar la factura generada a la página
             return {
                 "statusCode": 200,
                 "headers": headers,
