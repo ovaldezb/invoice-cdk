@@ -28,8 +28,9 @@ def handler(event, context):
     http_method = event["httpMethod"]
     path_parameters = event.get("pathParameters")
     body = event.get("body")
-    origin = event.get("headers", {}).get("origin")
-    headers["Access-Control-Allow-Origin"] = valida_cors(origin)
+    print(event)
+    #origin = event.get("headers", {}).get("origin")
+    #headers["Access-Control-Allow-Origin"] = valida_cors(origin)
     try:
         if http_method == Constants.POST:
             data = json.loads(body)

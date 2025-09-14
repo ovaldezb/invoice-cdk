@@ -13,7 +13,7 @@ class LambdaFunctions(Construct):
     folio_lambda: lambda_.Function
     genera_factura_lambda: lambda_.Function
     receptor_lambda: lambda_.Function
-    agrega_certificado_lambda: lambda_.Function
+    maneja_certificado_lambda: lambda_.Function
     timbres_consumo_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
@@ -57,7 +57,9 @@ class LambdaFunctions(Construct):
             "SW_USER_NAME": env_vars.get("SW_USER_NAME"),
             "SW_USER_PASSWORD": env_vars.get("SW_USER_PASSWORD"),
             "SW_URL": env_vars.get("SW_URL"),
-            "CORS": env_vars.get("CORS")
+            "CORS": env_vars.get("CORS"),
+            "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
+            "DB_NAME": env_vars.get("MONGO_DB"),
         }
 
         pymongo_layer = lambda_.LayerVersion(
@@ -84,7 +86,7 @@ class LambdaFunctions(Construct):
         self.create_folio_lambda(env, pymongo_layer)
         self.create_genera_factura_lambda(env_fact, pymongo_layer)
         self.create_receptor_lambda(env, pymongo_layer)
-        self.create_agrega_certificado_lambda(env_cert, pymongo_layer)
+        self.create_maneja_certificado_lambda(env_cert, pymongo_layer)
         self.create_timbres_consumo_lambda(env, pymongo_layer)
 
     def create_post_confirmation_lambda(self, env: dict,):
@@ -201,13 +203,13 @@ class LambdaFunctions(Construct):
             timeout=Duration.seconds(10)
         )
 
-    def create_agrega_certificado_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
-        self.agrega_certificado_lambda = lambda_.Function(
-            self, "AgregaCertificadoLambda",
-            function_name="agrega-certificado-lambda-invoice",
+    def create_maneja_certificado_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.maneja_certificado_lambda = lambda_.Function(
+            self, "ManejaCertificadoLambda",
+            function_name="maneja-certificado-lambda-invoice",
             description="Lambda function to handle adding certificates",
             runtime=lambda_.Runtime.PYTHON_3_12,
-            handler="agrega_certificado_handler.handler",
+            handler="maneja_certificado_handler.handler",
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,

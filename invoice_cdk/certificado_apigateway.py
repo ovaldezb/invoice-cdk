@@ -14,7 +14,7 @@ class CertificateApiGateway(Construct):
                  folio_lambda: _lambda.Function, 
                  genera_factura_lambda: _lambda.Function,
                  receptor_lambda: _lambda.Function,
-                 agrega_certificado_lambda: _lambda.Function,
+                 maneja_certificado_lambda: _lambda.Function,
                  timbres_consumo_lambda: _lambda.Function,
                  custom_authorizer_lambda: _lambda.Function = None):
         super().__init__(scope, id)
@@ -63,7 +63,7 @@ class CertificateApiGateway(Construct):
 
         #Folio resource
         folio_resource = api.root.add_resource("folio")
-        folio_id_resource = folio_resource.add_resource("{sucursal}")
+        
 
         #Folio resource
         genera_factura = api.root.add_resource("factura")
@@ -72,8 +72,9 @@ class CertificateApiGateway(Construct):
         receptor_resource = api.root.add_resource("receptor")
         receptor_id_resource = receptor_resource.add_resource("{id_receptor}")
 
-        #Agrega Certificado resource
-        agrega_certificado_resource = api.root.add_resource("agrega-certificado")   
+        #Maneja Certificado resource
+        maneja_certificado_resource = api.root.add_resource("maneja-certificado")
+        maneja_certificado_id_resource = maneja_certificado_resource.add_resource("{id}")
 
         # Consumo Timbres resource
         timbres_consumo_resource = api.root.add_resource("timbres")
@@ -115,8 +116,8 @@ class CertificateApiGateway(Construct):
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
-        agrega_certificado_integration = apigw.LambdaIntegration(
-            agrega_certificado_lambda,
+        maneja_certificado_integration = apigw.LambdaIntegration(
+            maneja_certificado_lambda,
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
@@ -128,37 +129,36 @@ class CertificateApiGateway(Construct):
         # Certificate methods (CON CUSTOM AUTHORIZER)
         certificates_resource.add_method("POST", certificate_integration)
         certificates_resource.add_method("GET", certificate_integration, authorizer=authorizer)
-        certificate_id_resource.add_method("GET", certificate_integration, authorizer=authorizer)
+        certificate_id_resource.add_method("GET", certificate_integration)
         certificate_id_resource.add_method("PUT", certificate_integration)
         certificate_id_resource.add_method("DELETE", certificate_integration, authorizer=authorizer)
 
         # Sucursal methods (CON CUSTOM AUTHORIZER)
         sucursales_resource.add_method("POST", sucursal_integration)
         sucursal_id_resource.add_method("GET", sucursal_integration)
-        sucursal_id_resource.add_method("PUT", sucursal_integration)
-        sucursal_id_resource.add_method("DELETE", sucursal_integration)
+        sucursal_id_resource.add_method("PUT", sucursal_integration, authorizer=authorizer)
+        sucursal_id_resource.add_method("DELETE", sucursal_integration, authorizer=authorizer)
 
-        # Datos Factura methods
+        # Datos Factura methods, no lleva authorizer
         datos_factura.add_method("GET", datos_factura_integration)
 
-        #Datos Tapetes methods 
+        #Datos Tapetes methods, obtiene el ticket de venta, no lleva authorizer
         tapetes_id_resource.add_method("GET", tapetes_integration)
 
         #Datos Folio methods 
         folio_resource.add_method("POST", folio_integration)
-        folio_id_resource.add_method("GET", folio_integration)
-        folio_id_resource.add_method("PUT", folio_integration)
 
-        #Datos Genera Factura methods 
+        #Datos Genera Factura methods, no lleva authorizer
         genera_factura.add_method("POST", genera_factura_integration)
 
-        #Datos Receptor methods
+        #Datos Receptor methods, no lleva authorizer
         receptor_resource.add_method("POST", receptor_integration)
         receptor_id_resource.add_method("GET", receptor_integration)
         receptor_id_resource.add_method("PUT", receptor_integration)
 
-        # Agrega Certificado methods
-        agrega_certificado_resource.add_method("POST", agrega_certificado_integration)
+        # Maneja Certificado methods
+        maneja_certificado_resource.add_method("POST", maneja_certificado_integration)
+        maneja_certificado_id_resource.add_method("DELETE", maneja_certificado_integration)
 
         # Consumo Timbres methods
         timbre_usuario_resource.add_method("GET", consumo_timbres_integration, authorizer=authorizer)

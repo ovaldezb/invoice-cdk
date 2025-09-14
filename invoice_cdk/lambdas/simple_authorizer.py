@@ -6,6 +6,7 @@ def handler(event, context):
     """
     Authorizer lambda simple que valida tokens de Cognito
     """
+    print("Event:", event)
     try:
         token = event['authorizationToken'].replace('Bearer ', '')
         method_arn = event['methodArn']
