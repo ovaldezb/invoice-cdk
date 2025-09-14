@@ -4,9 +4,11 @@ import requests
 from dbaccess.db_sucursal import get_sucursal_by_codigo
 from dbaccess.db_certificado import get_certificate_by_id
 from dbaccess.db_datos_factura import get_descripcion_by_clave
+from constantes import Constants
 from pymongo import MongoClient
+from utils import valida_cors
 
-APPLICATION_JSON = "application/json"
+
 
 user_name = os.getenv("TAPETES_USER_NAME")
 password = os.getenv("TAPETES_PASSWORD")
@@ -17,20 +19,20 @@ sucursal_collection = db["sucursales"]
 certificado_collection = db["certificates"]
 medidas_collection = db["medidas"]
 
+headers = Constants.HEADERS.copy()
 headersEndpoint = {
     'Content-Type': 'application/x-www-form-urlencoded',
 }
-headers = {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*"
-}
+
 
 def handler(event, context):
     http_method = event["httpMethod"]
     path_parameters = event.get("pathParameters")
+    origin = event.get("headers", {}).get("origin")
+    headers["Access-Control-Allow-Origin"] = valida_cors(origin)
     try:
         # Call external API endpoint
-        if http_method == "GET":
+        if http_method == Constants.GET:
             form_data = {
                 "username": user_name,
                 "password": password
@@ -44,24 +46,24 @@ def handler(event, context):
             ticket = path_parameters["ticket"]
             venta = requests.post(
                 f"{tapetes_api_url}tickets",
-                headers={"Accept": APPLICATION_JSON, "Content-Type": APPLICATION_JSON   , "Authorization": f"Bearer {token}"},
+                headers={"Accept": Constants.APPLICATION_JSON, "Content-Type": Constants.APPLICATION_JSON, "Authorization": f"Bearer {token}"},
                 data=json.dumps({"ticket": ticket})
             )
             venta_respuesta = venta.json()
             
             if 'detail' in venta_respuesta:
                 return {
-                    "statusCode": 404,
-                    "headers": headers,
-                    "body": json.dumps({"message": venta_respuesta["detail"]})
+                    Constants.STATUS_CODE: 404,
+                    Constants.HEADERS_KEY: headers,
+                    Constants.BODY: json.dumps({"message": venta_respuesta["detail"]})
                 }
             sucursal = venta_respuesta.get("sucursal")
             sucursal_data = get_sucursal_by_codigo(sucursal, sucursal_collection)
             if not sucursal_data:
                 return {
-                    "statusCode": 404,
-                    "headers": headers,
-                    "body": json.dumps({"message": "Sucursal no encontrada, consúltalo con el Administrador"})
+                    Constants.STATUS_CODE: 404,
+                    Constants.HEADERS_KEY: headers,
+                    Constants.BODY: json.dumps({"message": "Sucursal no encontrada, consúltalo con el Administrador"})
                 }
             detalle = venta_respuesta.get("detalle")
             for item in detalle:
@@ -72,16 +74,16 @@ def handler(event, context):
             certificado = get_certificate_by_id(id_certificado, certificado_collection)
             if not certificado:
                 return {
-                    "statusCode": 404,
-                    "headers": headers,
-                    "body": json.dumps({"message": "Certificado no encontrado, consúltalo con el Administrador"})
+                    Constants.STATUS_CODE: 404,
+                    Constants.HEADERS_KEY: headers,
+                    Constants.BODY: json.dumps({"message": "Certificado no encontrado, consúltalo con el Administrador"})
                 }
             certificado["_id"] = str(certificado["_id"])
             sucursal_data["_id"] = str(sucursal_data["_id"])
             return {
-                "statusCode": 200,
-                "headers": headers,
-                "body": json.dumps(
+                Constants.STATUS_CODE: 200,
+                Constants.HEADERS_KEY: headers,
+                Constants.BODY: json.dumps(
                     {
                         "venta": venta_respuesta,
                         "certificado": certificado,
@@ -93,9 +95,9 @@ def handler(event, context):
     except Exception as e:
         print(f"Error: {str(e)}")
         return {
-            "statusCode": 500,
-            "headers": headers,
-            "body": json.dumps({
+            Constants.STATUS_CODE: 500,
+            Constants.HEADERS_KEY: headers,
+            Constants.BODY: json.dumps({
                 "error": str(e)
             })
         }

@@ -1,5 +1,7 @@
 import os
 import json
+from constantes import Constants
+from receptor_handler import valida_cors
 from pymongo import MongoClient
 from dbaccess.db_timbres import (consulta_facturas_emitidas_by_certificado)
 from dbaccess.db_certificado import (list_certificates)
@@ -9,37 +11,36 @@ db = client[os.getenv("DB_NAME")]
 certificates_collection = db["certificates"]
 facturas_emitidas_collection = db["facturasemitidas"]
 
-HEADERS = {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*"
-}
+headers = Constants.HEADERS.copy()
 
 def lambda_handler(event, context):
-    print("Event:", event)
+    print(event)
     try:
         http_method = event["httpMethod"]
         path_parameters = event.get("pathParameters")
-        if http_method == 'GET':
+        origin = event.get("headers", {}).get("origin")
+        headers["Access-Control-Allow-Origin"] = valida_cors(origin)
+        print(headers)
+        if http_method == Constants.GET:
             usuario = path_parameters.get("usuario")
             if usuario:
                 desde = event['queryStringParameters'].get('desde')
                 hasta = event['queryStringParameters'].get('hasta')
                 lista_certificados = list_certificates(usuario, certificates_collection)
                 for cert in lista_certificados:
-                    print(f"Procesando certificado: {cert['_id']}")
                     facturas_emitidas = consulta_facturas_emitidas_by_certificado(
                         str(cert['_id']), desde, hasta, facturas_emitidas_collection)
                     cert['facturas_emitidas'] = facturas_emitidas
                 
                 return {
-                    'statusCode': 200,
-                    'body': json.dumps(lista_certificados, default=str),
-                    'headers': HEADERS
+                    Constants.STATUS_CODE: 200,
+                    Constants.BODY: json.dumps(lista_certificados, default=str),
+                    Constants.HEADERS_KEY: headers
                 }
     except Exception as e:
         print(f"Error: {e}")
         return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)}),
-            'headers': HEADERS
+            Constants.STATUS_CODE: 500,
+            Constants.BODY: json.dumps({'error': str(e)}),
+            Constants.HEADERS_KEY: headers
         }

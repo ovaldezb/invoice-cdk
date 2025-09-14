@@ -1,6 +1,7 @@
 import json
 import os
 import traceback
+from receptor_handler import valida_cors
 from pymongo import MongoClient
 from bson import json_util
 from http import HTTPStatus
@@ -29,10 +30,11 @@ def handler(event, context):
     http_method = event["httpMethod"]
     path_parameters = event.get("pathParameters")
     body = event.get("body")
+    origin = event.get("headers", {}).get("origin")
+    headers["Access-Control-Allow-Origin"] = valida_cors(origin)
     try:
         if http_method == "POST":
             data = json.loads(body)
-            print(f'data received: {data}')
             certificado = Certificado(
                 nombre=data["nombre"],
                 rfc=data["rfc"],

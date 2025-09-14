@@ -26,7 +26,7 @@ class CertificateApiGateway(Construct):
             rest_api_name="Invoice API",
             description="This service manages certificates and branches.",
             default_cors_preflight_options={
-                "allow_origins": ['*'],
+                "allow_origins": ['https://factura.farzin.com.mx', 'http://localhost:4200'],
                 "allow_methods": ['OPTIONS','GET','POST','PUT','DELETE'],
                 "allow_headers": ["Content-Type", "X-Amz-Date", "Authorization", "X-Api-Key", "X-Amz-Security-Token"],
                 "allow_credentials": True
@@ -127,7 +127,7 @@ class CertificateApiGateway(Construct):
 
         # Certificate methods (CON CUSTOM AUTHORIZER)
         certificates_resource.add_method("POST", certificate_integration)
-        certificates_resource.add_method("GET", certificate_integration)
+        certificates_resource.add_method("GET", certificate_integration, authorizer=authorizer)
         certificate_id_resource.add_method("GET", certificate_integration, authorizer=authorizer)
         certificate_id_resource.add_method("PUT", certificate_integration)
         certificate_id_resource.add_method("DELETE", certificate_integration, authorizer=authorizer)

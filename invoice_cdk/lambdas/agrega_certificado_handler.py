@@ -3,7 +3,7 @@ import base64
 import os
 import requests
 import re
-from certificate import Certificado
+from models.certificate import Certificado
 from requests_toolbelt.multipart import decoder
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend

@@ -1,5 +1,6 @@
 import json
 import os
+from constantes import Constants
 from pymongo import MongoClient
 from http import HTTPStatus
 from dbaccess.db_sucursal import (
@@ -25,16 +26,14 @@ def handler(event, context):
     http_method = event["httpMethod"]
     path_parameters = event.get("pathParameters")
     body = event.get("body")
-    print(f"Received event: {event}")
+    
     try:
         if http_method == "POST":
-            print(f"Creating new sucursal with data: {body}")
             sucursal_data = json.loads(body)
             sucursal = Sucursal(**sucursal_data)
-            sucursal_id = add_sucursal(sucursal, sucursal_collection)
-            print(f"Sucursal created with ID: {sucursal_id}")
+            sucursal_id = add_sucursal(sucursal, sucursal_collection)        
             return {
-                "statusCode": HTTPStatus.CREATED,
+                Constants.STATUS_CODE: HTTPStatus.CREATED,
                 "body": json.dumps({"message": "Sucursal added", "id": str(sucursal_id)}),
                 "headers": headers
             }
