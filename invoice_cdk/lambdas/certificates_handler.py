@@ -1,6 +1,7 @@
 import json
 import os
 import traceback
+from constantes import Constants
 from receptor_handler import valida_cors
 from pymongo import MongoClient
 from bson import json_util
@@ -21,10 +22,7 @@ db = client[os.getenv("DB_NAME")]
 certificates_collection = db["certificates"]
 sucursal_collection = db["sucursales"]
 
-headers = {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*"
-}
+headers = Constants.HEADERS.copy()
 
 def handler(event, context):
     http_method = event["httpMethod"]
@@ -33,7 +31,7 @@ def handler(event, context):
     origin = event.get("headers", {}).get("origin")
     headers["Access-Control-Allow-Origin"] = valida_cors(origin)
     try:
-        if http_method == "POST":
+        if http_method == Constants.POST:
             data = json.loads(body)
             certificado = Certificado(
                 nombre=data["nombre"],
@@ -46,22 +44,22 @@ def handler(event, context):
             )
             new_certificate = add_certificate(certificado, certificates_collection)
             return {
-                "statusCode": HTTPStatus.CREATED,
-                "body": json.dumps({"message": "Certificate added", "id": str(new_certificate)}),
-                "headers": headers
+                Constants.STATUS_CODE: HTTPStatus.CREATED,
+                Constants.BODY: json.dumps({"message": "Certificate added", "id": str(new_certificate)}),
+                Constants.HEADERS_KEY: headers
             }
-        elif http_method == "PUT": 
+        elif http_method == Constants.PUT: 
             cert_id = path_parameters["id"]
             updated_data = json.loads(body)
             del updated_data["_id"]
             update_certificate(cert_id, updated_data, certificates_collection)
             return {
-                "statusCode": HTTPStatus.OK,
-                "body": json.dumps({"message": "Certificate updated"}),
-                "headers": headers
+                Constants.STATUS_CODE: HTTPStatus.OK,
+                Constants.BODY: json.dumps({"message": "Certificate updated"}),
+                Constants.HEADERS_KEY: headers
             }
 
-        elif http_method == "GET":
+        elif http_method == Constants.GET:
             usuario = path_parameters.get("id")
             certificates = list_certificates(usuario,certificates_collection)
             for cert in certificates:
@@ -76,12 +74,12 @@ def handler(event, context):
                         sucursales.append(sucursal)
                 cert["sucursales"] = sucursales
             return {
-                "statusCode": HTTPStatus.OK,
-                "body": json_util.dumps(certificates),
-                "headers": headers
+                Constants.STATUS_CODE: HTTPStatus.OK,
+                Constants.BODY: json_util.dumps(certificates),
+                Constants.HEADERS_KEY: headers
             }
 
-        elif http_method == "DELETE":
+        elif http_method == Constants.DELETE:
             cert_id = path_parameters["id"]
             certificate = get_certificate_by_id(cert_id, certificates_collection)
             sucursales = certificate["sucursales"] 
@@ -90,14 +88,15 @@ def handler(event, context):
             delete_certificate(cert_id, certificates_collection)
             
             return {
-                "statusCode": HTTPStatus.OK,
-                "body": json_util.dumps({"message": "Certificate deleted"}),
-                "headers": headers
+                Constants.STATUS_CODE: HTTPStatus.OK,
+                Constants.BODY: json_util.dumps({"message": "Certificate deleted"}),
+                Constants.HEADERS_KEY: headers
             }
     except Exception as e:
         print(f"Error: {str(e)}")
         traceback.print_exc()
         return {
-            "statusCode": HTTPStatus.INTERNAL_SERVER_ERROR,
-            "body": json.dumps({"message": "Internal Server Error", "error": str(e)}),
+            Constants.STATUS_CODE: HTTPStatus.INTERNAL_SERVER_ERROR,
+            Constants.BODY: json.dumps({"message": "Internal Server Error", "error": str(e)}),
+            Constants.HEADERS_KEY: headers
         }

@@ -1,10 +1,12 @@
 import base64
+from http import HTTPStatus
 import os
 import json
 import traceback
 import requests
 import xml.dom.minidom
 from cfdi_pdf_fpdf_generator import CFDIPDF_FPDF_Generator
+from constantes import Constants
 from pymongo import MongoClient
 from dbaccess.db_datos_factura import guarda_factura_emitida
 from models.factura_emitida import FacturaEmitida
@@ -43,7 +45,7 @@ def handler(event, context):
         fecha_venta = body['fechaVenta']
         email_receptor = body['email']
 
-        if http_method == "POST":
+        if http_method == Constants.POST:
             #Estos son los pasos para generar la factura
             #1. Obtener el folio actual y actualizarlo, para evitar colisiones
             folio = folio_collection.find_one_and_update({"sucursal": sucursal}, {"$inc": {"noFolio": 1}}, return_document=True)
@@ -70,9 +72,9 @@ def handler(event, context):
             #4.1 Validar si hubo error en la generación de la factura
             if factura_generada.get("status") == 'error':
                 return {
-                    "statusCode": 400,
-                    "headers": headers,
-                    "body": json.dumps({"message": factura_generada.get("message")})
+                    Constants.STATUS_CODE: HTTPStatus.BAD_REQUEST,
+                    Constants.HEADERS_KEY: headers,
+                    Constants.BODY: json.dumps({"message": factura_generada.get("message")})
                 }
             #5. Formatear el XML para que se retornarlo al endpoint del cliente
             dom = xml.dom.minidom.parseString(factura_generada["data"]["cfdi"])
@@ -143,9 +145,9 @@ def handler(event, context):
             print(f"Email sent: {result}")
             #9. Retornar la factura generada a la página
             return {
-                "statusCode": 200,
-                "headers": headers,
-                "body": json.dumps({
+                Constants.STATUS_CODE: HTTPStatus.OK,
+                Constants.HEADERS_KEY: headers,
+                Constants.BODY: json.dumps({
                     **factura_generada["data"],
                     "pdf_cfdi_b64": pdf_b64
                     })
@@ -155,7 +157,7 @@ def handler(event, context):
         print(f"Error: {str(e)}")
         traceback.print_exc()
         return {
-            "statusCode": 500,
-            "headers": headers,
-            "body": json.dumps({"message": str(e)})
+            Constants.STATUS_CODE: HTTPStatus.INTERNAL_SERVER_ERROR,
+            Constants.HEADERS_KEY: headers,
+            Constants.BODY: json.dumps({"message": str(e)})
         }

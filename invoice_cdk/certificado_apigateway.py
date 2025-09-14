@@ -161,4 +161,4 @@ class CertificateApiGateway(Construct):
         agrega_certificado_resource.add_method("POST", agrega_certificado_integration)
 
         # Consumo Timbres methods
-        timbre_usuario_resource.add_method("GET", consumo_timbres_integration)
+        timbre_usuario_resource.add_method("GET", consumo_timbres_integration, authorizer=authorizer)

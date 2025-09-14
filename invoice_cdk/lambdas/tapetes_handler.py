@@ -1,3 +1,4 @@
+from http import HTTPStatus
 import json
 import os
 import requests
@@ -61,7 +62,7 @@ def handler(event, context):
             sucursal_data = get_sucursal_by_codigo(sucursal, sucursal_collection)
             if not sucursal_data:
                 return {
-                    Constants.STATUS_CODE: 404,
+                    Constants.STATUS_CODE: HTTPStatus.NOT_FOUND,
                     Constants.HEADERS_KEY: headers,
                     Constants.BODY: json.dumps({"message": "Sucursal no encontrada, consúltalo con el Administrador"})
                 }
@@ -74,7 +75,7 @@ def handler(event, context):
             certificado = get_certificate_by_id(id_certificado, certificado_collection)
             if not certificado:
                 return {
-                    Constants.STATUS_CODE: 404,
+                    Constants.STATUS_CODE: HTTPStatus.NOT_FOUND,
                     Constants.HEADERS_KEY: headers,
                     Constants.BODY: json.dumps({"message": "Certificado no encontrado, consúltalo con el Administrador"})
                 }
@@ -95,7 +96,7 @@ def handler(event, context):
     except Exception as e:
         print(f"Error: {str(e)}")
         return {
-            Constants.STATUS_CODE: 500,
+            Constants.STATUS_CODE: HTTPStatus.INTERNAL_SERVER_ERROR,
             Constants.HEADERS_KEY: headers,
             Constants.BODY: json.dumps({
                 "error": str(e)
