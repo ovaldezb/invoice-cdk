@@ -161,12 +161,12 @@ class CognitoConstruct(Construct):
         )
     
     @property
-    def user_pool_id(self) -> str:
+    def user_pool_cognito(self) -> cognito.IUserPool:
         """
-        Retorna el ID del User Pool
+        Retorna el User Pool
         """
-        return self.user_pool.user_pool_id
-    
+        return self.user_pool
+
     @property
     def user_pool_client_id(self) -> str:
         """

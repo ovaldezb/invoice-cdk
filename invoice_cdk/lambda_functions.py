@@ -50,6 +50,7 @@ class LambdaFunctions(Construct):
             "SMTP_USER": env_vars.get("SMTP_USER"),
             "SMTP_PASSWORD": env_vars.get("SMTP_PASSWORD"),
             "SMTP_FROM": env_vars.get("SMTP_FROM"),
+            "SMTP_REPLY_TO": env_vars.get("SMTP_REPLY_TO"),
             "CORS": env_vars.get("CORS")
         }
 

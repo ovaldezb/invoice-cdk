@@ -97,10 +97,10 @@ def handler(event, context):
                                 "erfc"     : timbrado['Emisor']['Rfc'],
                                 "sucursal" : sucursal,
                                 "serie"    : timbrado['Serie'],
-                                "folio"    : timbrado['Folio'],
-                                "subtotal" : timbrado['SubTotal'],
-                                "impuesto" : timbrado['Impuestos']['TotalImpuestosTrasladados'],
-                                "total"    : timbrado['Total'],
+                                "folio"    : str(timbrado['Folio']),
+                                "subtotal" : str(timbrado['SubTotal']),
+                                "impuesto" : str(timbrado['Impuestos']['TotalImpuestosTrasladados']),
+                                "total"    : str(timbrado['Total']),
                                 "uuid"     : factura_generada["data"]["uuid"],
                                 "rrfc"     : timbrado['Receptor']['Rfc'],
                                 "rnombre"  : timbrado['Receptor']['Nombre'],
@@ -113,20 +113,23 @@ def handler(event, context):
                                 "xml_cfdi" : pretty_xml, 
                                 "xml_cfdi_b64" : base64.b64encode(xml_escaped.encode()).decode()
                                 })
-            
-            requests.post(
+
+            print(body_envio_endpoint)
+            respuesta = requests.post(
                 f"{tapetes_api_url}recibefacturas/",
                 headers={"Accept": APPLICATION_JSON, "Content-Type": APPLICATION_JSON, "Authorization": f"Bearer {token}"},
                 data=body_envio_endpoint
             )
+            print(f"Respuesta endpoint tapetes: {respuesta.status_code} - {respuesta.text}")
+
             #6. Guardar la factura generada en la base de datos
             factura_generada["data"]["sucursal"]=sucursal
             factura_generada["data"]["idCertificado"]=id_certificado
-            
             guarda_factura_emitida(FacturaEmitida(**factura_generada["data"]), facturas_emitidas_collection)
-            #7 Generar PDF de la factura
             
+            #7 Generar PDF de la factura
             cfdi = factura_generada["data"]["cfdi"]
+            uuid = factura_generada["data"]["uuid"]
             qr_code = factura_generada["data"]["qrCode"]
             cadena_original_sat = factura_generada["data"]["cadenaOriginalSAT"]
             pdf_bytes = CFDIPDF_FPDF_Generator(cfdi, qr_code, cadena_original_sat, ticket, fecha_venta).generate_pdf()
@@ -137,9 +140,9 @@ def handler(event, context):
                 recipient_email=email_receptor,
                 pdf_base64=pdf_b64,
                 cfdi_xml=pretty_xml,
-                pdf_filename=f"factura_{timbrado['Serie']}{timbrado['Folio']}.pdf",
-                xml_filename=f"cfdi_{timbrado['Serie']}{timbrado['Folio']}.xml",
-                subject=f"Factura {timbrado['Serie']}{timbrado['Folio']}",
+                pdf_filename=f"{uuid}.pdf",
+                xml_filename=f"{uuid}.xml",
+                subject="Factura del ticket " + ticket,
                 body_text="Adjunto factura en PDF y XML"
             )
             print(f"Email sent: {result}")

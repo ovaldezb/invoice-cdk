@@ -1,67 +1,54 @@
 import json
-import base64
-import urllib.request
+import jwt  # PyJWT
+import os
+from jwt import PyJWKClient
 
-def handler(event, context):
-    """
-    Authorizer lambda simple que valida tokens de Cognito
-    """
-    print("Event:", event)
+USERPOOL_ID = os.getenv("COGNITO_USERPOOL_ID", "us-east-1_pfcGvfKy1")
+REGION = os.getenv("AWS_REGION", "us-east-1")
+AUDIENCE = os.getenv("COGNITO_AUDIENCE", "tfts8oboht5vbs12dsoie8ecs")
+
+JWKS_URL = f"https://cognito-idp.{REGION}.amazonaws.com/{USERPOOL_ID}/.well-known/jwks.json"
+
+# Crear cliente JWK una sola vez (PyJWKClient internamente hace caching)
+_jwk_client = PyJWKClient(JWKS_URL)
+
+def lambda_handler(event, context):
+    print("Evento recibido:", json.dumps(event))
+    token = event.get("authorizationToken", "")
+    if not token.startswith("Bearer "):
+        raise Exception("Unauthorized")
+
+    token = token.split(" ", 1)[1]
+
     try:
-        token = event['authorizationToken'].replace('Bearer ', '')
-        method_arn = event['methodArn']
-        
-        # Validación básica del token
-        if not token or len(token) < 50:
-            raise ValueError("Token inválido o muy corto")
+        signing_key = _jwk_client.get_signing_key_from_jwt(token).key
+        decoded = jwt.decode(
+            token,
+            signing_key,
+            algorithms=["RS256"],
+            audience=AUDIENCE,
+            issuer=f"https://cognito-idp.{REGION}.amazonaws.com/{USERPOOL_ID}"
+        )
+        principal_id = decoded.get("sub", "user")
+        return generate_policy(principal_id, "Allow", event["methodArn"], decoded)
 
-        # Decodificar payload sin verificar firma (solo para desarrollo/pruebas)
-        try:
-            # Separar el token JWT
-            parts = token.split('.')
-            if len(parts) != 3:
-                raise ValueError('Token format invalid')
-            
-            # Decodificar el payload (parte central)
-            payload_encoded = parts[1]
-            # Agregar padding si es necesario
-            payload_encoded += '=' * (4 - len(payload_encoded) % 4)
-            payload_decoded = base64.urlsafe_b64decode(payload_encoded)
-            payload = json.loads(payload_decoded.decode('utf-8'))
-            
-            # Verificaciones básicas
-            if 'sub' not in payload:
-                raise ValueError('Invalid token - no sub claim')
-
-            username = payload.get('username', payload.get('sub'))
-            print(f"Usuario autenticado: {username}")
-            
-        except Exception as e:
-            print(f"Error decodificando token: {e}")
-            raise ValueError('Unauthorized')
-        
-        # Generar policy de autorización
-        policy = {
-            'principalId': username,
-            'policyDocument': {
-                'Version': '2012-10-17',
-                'Statement': [
-                    {
-                        'Action': 'execute-api:Invoke',
-                        'Effect': 'Allow',
-                        'Resource': method_arn.replace(method_arn.split('/')[-1], '*')
-                    }
-                ]
-            },
-            'context': {
-                'username': username,
-                'sub': payload.get('sub', '')
-            }
-        }
-        
-        print("Autorización exitosa:", policy)
-        return policy
-        
+    except jwt.ExpiredSignatureError:
+        print("Token expirado")
+        raise Exception("Unauthorized")
     except Exception as e:
-        print(f"Error en autorización: {str(e)}")
-        raise ValueError('Unauthorized')
+        print("Error validando token:", str(e))
+        raise Exception("Unauthorized")
+
+def generate_policy(principal_id, effect, resource, context_data=None):
+    auth_response = {
+        "principalId": principal_id,
+        "policyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {"Action": "execute-api:Invoke", "Effect": effect, "Resource": resource}
+            ]
+        }
+    }
+    if context_data:
+        auth_response["context"] = {k: str(v) for k, v in context_data.items()}
+    return auth_response

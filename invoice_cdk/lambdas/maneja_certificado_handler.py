@@ -111,8 +111,8 @@ def handler(event, context):
             nombre_match = re.search(r'CN=([^,]+)', subject)
             nombre = nombre_match.group(1) if nombre_match else None
 
-            not_before = cert.not_valid_before_utc
-            not_after = cert.not_valid_after_utc
+            not_before = cert.not_valid_before
+            not_after = cert.not_valid_after
         
             b64_key = base64.b64encode(key_bytes).decode("utf-8")
             b64_cer = base64.b64encode(cer_bytes).decode("utf-8")
