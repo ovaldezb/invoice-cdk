@@ -25,8 +25,8 @@ class EmailSender:
         self.use_tls = True
 
     def send_invoice(self, recipient_email: str, pdf_base64: str, cfdi_xml: str,
-                     pdf_filename: str = 'factura.pdf', xml_filename: str = 'cfdi.xml',
-                     subject: str = 'Factura', body_text: str = 'Adjunto factura en PDF y XML') -> bool:
+                     pdf_filename: str, xml_filename: str,
+                     subject: str, body_text: str) -> bool:
         # Construir mensaje MIME (igual que antes)
         msg = MIMEMultipart('related')
 

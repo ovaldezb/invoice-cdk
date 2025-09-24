@@ -4,14 +4,16 @@ from fpdf import FPDF
 import xml.etree.ElementTree as ET
 import io
 from num2words import num2words
-from tufan_logo import tufan_logo_base64
+
 class CFDIPDF_FPDF_Generator():
-    def __init__(self, xml_string: str, qrCode: str, cadena_original_sat: str, noTicket: str, fecha_hora_venta: str) -> None:
+    def __init__(self, xml_string: str, qrCode: str, cadena_original_sat: str, noTicket: str, fecha_hora_venta: str, direccion: str, empresa:str) -> None:
         self.xml_string = xml_string
         self.qrCode = qrCode
         self.cadena_original_sat = cadena_original_sat
         self.noTicket = noTicket
         self.fecha_hora_venta = fecha_hora_venta
+        self.direccion = direccion
+        self.empresa = empresa
         self.root = ET.fromstring(xml_string)
         self.data = self._parse_cfdi()
 
@@ -68,12 +70,13 @@ class CFDIPDF_FPDF_Generator():
         pdf.line(10, pdf.get_y(), 200, pdf.get_y())  # Línea de 10mm a 200mm en la posición vertical actual
         
         # Emisor/Receptor
-        #pdf.image('Logo-Tufan.png', x=10, y=18, w=40)  # Ajusta la ruta y tamaño del logo según sea necesario
-        image_bytes = base64.b64decode(tufan_logo_base64())
+        #pdf.image(self.empresa + '-logo.png', x=10, y=18, w=40)  # Ajusta la ruta y tamaño del logo según sea necesario
+        """image_bytes = base64.b64decode(tufan_logo_base64())
         with tempfile.NamedTemporaryFile(delete=True, suffix=".png") as tmp_img:
             tmp_img.write(image_bytes)
             tmp_img.flush()
             pdf.image(tmp_img.name, x=10, y=18, w=40)
+        """
         pdf.set_font("Arial", '', 8)
         emisor = self.data['emisor']
         pdf.cell(42,4, '')
@@ -92,7 +95,7 @@ class CFDIPDF_FPDF_Generator():
 
         pdf.cell(42,4, '')
         pdf.set_font("Arial", 'B', 5)
-        pdf.cell(63,4, 'BLVRD. ADOLFO LOPEZ MATEOS 2930-24-25',)
+        pdf.cell(63,4, self.direccion)
         pdf.set_font("Arial", 'B', 8)
         pdf.cell(30,4, 'Fecha y Hora:', align='R')
         pdf.set_font("Arial", '', 8)
@@ -100,7 +103,7 @@ class CFDIPDF_FPDF_Generator():
 
         pdf.cell(42,4, '')
         pdf.set_font("Arial", 'B', 5)
-        pdf.cell(63,3, 'COL.TIZAPAN ALVARO OBREGON,CDMX, C.P. 01090',)
+        pdf.cell(63,3, '',)#pdf.cell(63,3, 'COL.TIZAPAN ALVARO OBREGON,CDMX, C.P. 01090',)
         pdf.set_font("Arial", 'B', 8)
         pdf.cell(30,4, 'Tipo de Comprobante:', align='R')
         pdf.set_font("Arial", '', 8)
@@ -191,10 +194,10 @@ class CFDIPDF_FPDF_Generator():
             pdf.cell(20, 6, concepto.get('ClaveUnidad', ''), align='C', border=0)
             pdf.cell(12, 6, concepto.get('Unidad', ''), align='C', border=0)
             pdf.cell(60, 6, concepto.get('Descripcion', ''), align='L', border=0)
-            pdf.cell(20, 6, '$'+concepto.get('ValorUnitario', ''), align='C', border=0)
-            pdf.cell(20, 6, '$'+concepto['impuestos']['Importe'], align='C', border=0)
+            pdf.cell(20, 6, '$'+f"{float(concepto.get('ValorUnitario', 0.0)):,.2f}", align='C', border=0)
+            pdf.cell(20, 6, '$'+f"{float(concepto['impuestos']['Importe']):,.2f}", align='C', border=0)
             impuesto_total += float(concepto['impuestos'].get('Importe', 0.0))
-            pdf.cell(20, 6, '$'+concepto.get('Importe', ''), align='C', border='R', ln=True)
+            pdf.cell(20, 6, '$'+f"{float(concepto.get('Importe', 0.0)):,.2f}", align='C', border='R', ln=True)
         pdf.set_font("Arial", 'B', 7)
         pdf.cell(25,10,'OBSERVACIONES:',border='LT')
         pdf.set_font("Arial", '', 7)
@@ -202,19 +205,19 @@ class CFDIPDF_FPDF_Generator():
         pdf.set_font("Arial", 'B', 7)
         pdf.cell(20,6,'Subtotal:',border='LRTB',align='C')
         pdf.set_font("Arial", '', 7)
-        pdf.cell(20,6,'$'+self.data['subtotal'],border='RTB',align='C',ln=True)
+        pdf.cell(20,6,'$'+f"{float(self.data['subtotal']):,.2f}",border='RTB',align='C',ln=True)
         pdf.cell(150,6,'',border='LR')
         pdf.set_font("Arial", 'B', 7)
         pdf.cell(20,6,'IVA 16%:',border='LRTB',align='C')
         pdf.set_font("Arial", '', 7)
-        pdf.cell(20,6,'$'+str(impuesto_total),border='RTB',align='C',ln=True)
+        pdf.cell(20,6,'$'+f"{impuesto_total:,.2f}",border='RTB',align='C',ln=True)
         pdf.cell(28,6,'IMPORTE CON LETRA:',border='LBT')
         pdf.set_font("Arial", '', 7)
         pdf.cell(122,6,num2words(self.data['total'], lang='es', to='currency', currency='MXN'),border='RBT')
         pdf.set_font("Arial", 'B', 7)
         pdf.cell(20,6,'Total:',border='RTB',align='C')
         pdf.set_font("Arial", '', 7)
-        pdf.cell(20,6,'$'+self.data['total'],border='RTB',align='C',ln=True)
+        pdf.cell(20,6,'$'+f"{float(self.data['total']):,.2f}",border='RTB',align='C',ln=True)
         pdf.cell(190,3,'',border='LR',ln=True)
         # Código QR y Timbre Fiscal
         x,y = 10,pdf.get_y()
