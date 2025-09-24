@@ -6,7 +6,7 @@ import io
 from num2words import num2words
 
 class CFDIPDF_FPDF_Generator():
-    def __init__(self, xml_string: str, qrCode: str, cadena_original_sat: str, noTicket: str, fecha_hora_venta: str, direccion: str, empresa:str) -> None:
+    def __init__(self, xml_string: str, qrCode: str, cadena_original_sat: str, noTicket: str, fecha_hora_venta: str, direccion: str, empresa:str, regimen_fiscal_emisor: str, regimen_fiscal_receptor: str) -> None:
         self.xml_string = xml_string
         self.qrCode = qrCode
         self.cadena_original_sat = cadena_original_sat
@@ -14,6 +14,8 @@ class CFDIPDF_FPDF_Generator():
         self.fecha_hora_venta = fecha_hora_venta
         self.direccion = direccion
         self.empresa = empresa
+        self.regimen_fiscal_emisor = regimen_fiscal_emisor
+        self.regimen_fiscal_receptor = regimen_fiscal_receptor
         self.root = ET.fromstring(xml_string)
         self.data = self._parse_cfdi()
 
@@ -70,7 +72,7 @@ class CFDIPDF_FPDF_Generator():
         pdf.line(10, pdf.get_y(), 200, pdf.get_y())  # Línea de 10mm a 200mm en la posición vertical actual
         
         # Emisor/Receptor
-        #pdf.image(self.empresa + '-logo.png', x=10, y=18, w=40)  # Ajusta la ruta y tamaño del logo según sea necesario
+        pdf.image(self.empresa + '-logo.png', x=10, y=18, w=40)  # Ajusta la ruta y tamaño del logo según sea necesario
         """image_bytes = base64.b64decode(tufan_logo_base64())
         with tempfile.NamedTemporaryFile(delete=True, suffix=".png") as tmp_img:
             tmp_img.write(image_bytes)
@@ -119,7 +121,7 @@ class CFDIPDF_FPDF_Generator():
 
         pdf.cell(42,4, '')
         pdf.set_font("Arial", '', 8)
-        pdf.cell(63,4, emisor.get('RegimenFiscal',''),ln=True)
+        pdf.cell(63,4, self.regimen_fiscal_emisor,ln=True)
 
         pdf.line(10, pdf.get_y(), 200, pdf.get_y())  
         pdf.ln(2)
@@ -129,7 +131,7 @@ class CFDIPDF_FPDF_Generator():
             ("RFC:", receptor.get('Rfc','')),
             ("Uso CFDI:", receptor.get('UsoCFDI','')),
             ("Domicilio Fiscal:", receptor.get('DomicilioFiscalReceptor','')),
-            ("Regimen Fiscal:", receptor.get('RegimenFiscalReceptor',''))
+            ("Regimen Fiscal:", self.regimen_fiscal_receptor)
         ]
 
         formapago_pares = [

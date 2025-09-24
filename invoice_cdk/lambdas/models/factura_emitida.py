@@ -13,3 +13,4 @@ class FacturaEmitida(BaseModel):
     uuid: str
     sucursal: str
     idCertificado: str
+    ticket: str

@@ -8,7 +8,7 @@ import xml.dom.minidom
 from cfdi_pdf_fpdf_generator import CFDIPDF_FPDF_Generator
 from constantes import Constants
 from pymongo import MongoClient
-from dbaccess.db_datos_factura import guarda_factura_emitida
+from dbaccess.db_datos_factura import (guarda_factura_emitida, get_regimen_fiscal_by_clave)
 from models.factura_emitida import FacturaEmitida
 from email_sender import EmailSender
 
@@ -22,6 +22,7 @@ tapetes_api_url = os.getenv("TAPETES_API_URL")
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client[os.getenv("DB_NAME")]
 facturas_emitidas_collection = db["facturasemitidas"]
+regimen_fiscal_collection = db["regimenfiscal"]
 folio_collection = db["folios"]
 
 APPLICATION_JSON = "application/json"
@@ -59,6 +60,10 @@ def handler(event, context):
                     "body": json.dumps({"message": f"No se encontró folio para la sucursal {sucursal}, favor contactar al administador"})
                 }
             timbrado['Folio'] = folio['noFolio']
+            #2.1 obtener el regimen fiscal del emisor
+            regimen_fiscal_emisor = get_regimen_fiscal_by_clave(timbrado['Emisor']['RegimenFiscal'],regimen_fiscal_collection)
+            regimen_fiscal_receptor = get_regimen_fiscal_by_clave(timbrado['Receptor']['RegimenFiscalReceptor'],regimen_fiscal_collection)
+            
             #3. Obtener el token de SW
             sw_token = requests.post(
                 f"{SW_URL}/v2/security/authenticate",
@@ -125,6 +130,7 @@ def handler(event, context):
         #6. Guardar la factura generada en la base de datos
             factura_generada["data"]["sucursal"]=sucursal
             factura_generada["data"]["idCertificado"]=id_certificado
+            factura_generada["data"]["ticket"]=ticket
             guarda_factura_emitida(FacturaEmitida(**factura_generada["data"]), facturas_emitidas_collection)
             
         #7 Generar PDF de la factura
@@ -135,17 +141,18 @@ def handler(event, context):
             pdf_bytes = CFDIPDF_FPDF_Generator(cfdi, qr_code, cadena_original_sat, ticket, fecha_venta,direccion,empresa).generate_pdf()
             pdf_b64 = base64.b64encode(pdf_bytes).decode('utf-8')
         #8. Envia correo
-            email = EmailSender()
-            result = email.send_invoice(
-                recipient_email=email_receptor,
-                pdf_base64=pdf_b64,
-                cfdi_xml=pretty_xml,
-                pdf_filename=f"{uuid}.pdf",
-                xml_filename=f"{uuid}.xml",
-                subject="Factura del ticket " + ticket,
-                body_text="Se adjunto factura en PDF y XML para el ticket " + ticket+" \n Agradecemos su preferencia"
-            )
-            print(f"Email sent: {result}")
+            if email_receptor and "@" in email_receptor:
+                email = EmailSender()
+                result = email.send_invoice(
+                    recipient_email=email_receptor,
+                    pdf_base64=pdf_b64,
+                    cfdi_xml=pretty_xml,
+                    pdf_filename=f"{uuid}.pdf",
+                    xml_filename=f"{uuid}.xml",
+                    subject="Factura del ticket " + ticket,
+                    body_text="Se adjunto factura en PDF y XML para el ticket " + ticket+" \n Agradecemos su preferencia"
+                )
+                print(f"Email sent: {result}")
             #9. Retornar la factura generada a la página
             return {
                 Constants.STATUS_CODE: HTTPStatus.OK,

@@ -20,3 +20,4 @@ main.py
 run_test.sh
 *.xml
 *.png
+*.pdf
