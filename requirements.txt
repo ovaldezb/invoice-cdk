@@ -6,3 +6,4 @@ boto3>=1.28.10
 pydantic>=1.10.9
 fpdf>=1.7.2
 num2words>=0.5.12
+PyPDF2>=3.0.1

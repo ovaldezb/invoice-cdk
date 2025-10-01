@@ -17,7 +17,9 @@ SW_USER_PASSWORD = os.getenv("SW_USER_PASSWORD")
 SW_URL = os.getenv("SW_URL")
 USER_NAME_CLIENT = os.getenv("TAPETES_USER_NAME")
 PASSWORD_CLIENT = os.getenv("TAPETES_PASSWORD")
-tapetes_api_url = os.getenv("TAPETES_API_URL")
+TAPETES_API_URL = os.getenv("TAPETES_API_URL")
+FACTURAPI_URL = os.getenv("FACTURAPI_URL")
+FACTURAPI_TOKEN = os.getenv("FACTURAPI_TOKEN")
 
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client[os.getenv("DB_NAME")]
@@ -94,7 +96,7 @@ def handler(event, context):
                 "password": PASSWORD_CLIENT
             }
             response = requests.post(
-                f"{tapetes_api_url}token", 
+                f"{TAPETES_API_URL}token", 
                 headers=headersEndpoint, 
                 data=form_data
             )
@@ -122,7 +124,7 @@ def handler(event, context):
                                 })
 
             requests.post(
-                f"{tapetes_api_url}recibefacturas/",
+                f"{TAPETES_API_URL}recibefacturas/",
                 headers={"Accept": APPLICATION_JSON, "Content-Type": APPLICATION_JSON, "Authorization": f"Bearer {token}"},
                 data=body_envio_endpoint
             )
@@ -138,7 +140,7 @@ def handler(event, context):
             uuid = factura_generada["data"]["uuid"]
             qr_code = factura_generada["data"]["qrCode"]
             cadena_original_sat = factura_generada["data"]["cadenaOriginalSAT"]
-            pdf_bytes = CFDIPDF_FPDF_Generator(cfdi, qr_code, cadena_original_sat, ticket, fecha_venta,direccion,empresa).generate_pdf()
+            pdf_bytes = CFDIPDF_FPDF_Generator(cfdi, qr_code, cadena_original_sat, ticket, fecha_venta,direccion,empresa,regimen_fiscal_emisor, regimen_fiscal_receptor).generate_pdf()
             pdf_b64 = base64.b64encode(pdf_bytes).decode('utf-8')
         #8. Envia correo
             if email_receptor and "@" in email_receptor:

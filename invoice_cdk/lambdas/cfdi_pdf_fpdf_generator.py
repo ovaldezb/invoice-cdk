@@ -144,8 +144,8 @@ class CFDIPDF_FPDF_Generator():
 
         x_cliente = 10
         x_pago = 110
-        w_cliente_title = 35
-        w_cliente_value = 60
+        w_cliente_title = 25
+        w_cliente_value = 70
         w_pago_title = 35
         w_pago_value = 55
         line_height = 4

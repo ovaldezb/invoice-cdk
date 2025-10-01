@@ -17,6 +17,7 @@ class CertificateApiGateway(Construct):
                  receptor_lambda: _lambda.Function,
                  maneja_certificado_lambda: _lambda.Function,
                  timbres_consumo_lambda: _lambda.Function,
+                 parsea_pdf_regimen_lambda: _lambda.Function,
                  user_pool: cognito.IUserPool):
         super().__init__(scope, id)
        
@@ -98,6 +99,9 @@ class CertificateApiGateway(Construct):
         timbres_consumo_resource = api.root.add_resource("timbres")
         timbre_usuario_resource = timbres_consumo_resource.add_resource("{usuario}")
 
+        # Parsea PDF Regimen resource
+        parsea_pdf_regimen_resource = api.root.add_resource("parsea-pdf")
+
         # Integrations
         certificate_integration = apigw.LambdaIntegration(
             certificate_lambda,
@@ -144,6 +148,11 @@ class CertificateApiGateway(Construct):
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
+        parsea_pdf_regimen_integration = apigw.LambdaIntegration(
+            parsea_pdf_regimen_lambda,
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
+        )
+
         # Certificate methods (CON CUSTOM AUTHORIZER)
         certificates_resource.add_method("POST", certificate_integration,)
         certificates_resource.add_method("GET", certificate_integration, authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
@@ -180,3 +189,6 @@ class CertificateApiGateway(Construct):
 
         # Consumo Timbres methods
         timbre_usuario_resource.add_method("GET", consumo_timbres_integration)
+
+        # Parsea PDF Regimen methods
+        parsea_pdf_regimen_resource.add_method("POST", parsea_pdf_regimen_integration)

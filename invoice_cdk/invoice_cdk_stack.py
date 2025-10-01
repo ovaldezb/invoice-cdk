@@ -34,7 +34,9 @@ class InvoiceCdkStack(Stack):
                             self.lambda_functions.genera_factura_lambda,
                             self.lambda_functions.receptor_lambda,
                             self.lambda_functions.maneja_certificado_lambda,
-                            self.lambda_functions.timbres_consumo_lambda,
-                            self.cognito_invoice.user_pool_cognito)
+                            self.lambda_functions.timbres_consumo_lambda,                            
+                            self.lambda_functions.parsea_pdf_regimen_lambda,
+                            self.cognito_invoice.user_pool_cognito,
+                            )
 
         #AngularHost(self, "AngularHostStack")
