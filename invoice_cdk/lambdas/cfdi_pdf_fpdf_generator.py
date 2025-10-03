@@ -73,12 +73,7 @@ class CFDIPDF_FPDF_Generator():
         
         # Emisor/Receptor
         pdf.image(self.empresa + '-logo.png', x=10, y=18, w=40)  # Ajusta la ruta y tamaño del logo según sea necesario
-        """image_bytes = base64.b64decode(tufan_logo_base64())
-        with tempfile.NamedTemporaryFile(delete=True, suffix=".png") as tmp_img:
-            tmp_img.write(image_bytes)
-            tmp_img.flush()
-            pdf.image(tmp_img.name, x=10, y=18, w=40)
-        """
+        
         pdf.set_font("Arial", '', 8)
         emisor = self.data['emisor']
         pdf.cell(42,4, '')
@@ -96,7 +91,7 @@ class CFDIPDF_FPDF_Generator():
         pdf.cell(55,4, f"{self.data['serie']} {self.data['folio']}",align='L',ln=True)
 
         pdf.cell(42,4, '')
-        pdf.set_font("Arial", 'B', 5)
+        pdf.set_font("Arial", '', 8)
         pdf.cell(63,4, self.direccion)
         pdf.set_font("Arial", 'B', 8)
         pdf.cell(30,4, 'Fecha y Hora:', align='R')
@@ -190,16 +185,34 @@ class CFDIPDF_FPDF_Generator():
         pdf.cell(20, 6, "Importe", border=1, align='C', ln=True)
         pdf.set_font("Arial", '', 7)
         impuesto_total = 0.0
+        MAX_LENGTH_DESCRIPCION = 40
+        
         for concepto in self.data['conceptos']:
+            row_size = 6
+            descripcion_full = concepto.get('Descripcion', '')
+            if len(descripcion_full) > MAX_LENGTH_DESCRIPCION:
+                descripcion_short = descripcion_full[:MAX_LENGTH_DESCRIPCION] 
+                last_space = descripcion_short.rfind(' ')
+                descripcion_short = descripcion_full[:last_space] 
+                row_size = 4
+            else:
+                descripcion_short = descripcion_full
             pdf.cell(24, 6, concepto.get('ClaveProdServ', ''), align='C', border='L')
             pdf.cell(14, 6, str(concepto.get('Cantidad', ''))+'.00', align='C', border=0)
             pdf.cell(20, 6, concepto.get('ClaveUnidad', ''), align='C', border=0)
             pdf.cell(12, 6, concepto.get('Unidad', ''), align='C', border=0)
-            pdf.cell(60, 6, concepto.get('Descripcion', ''), align='L', border=0)
+            pdf.cell(60, row_size, descripcion_short, align='L', border=0)
             pdf.cell(20, 6, '$'+f"{float(concepto.get('ValorUnitario', 0.0)):,.2f}", align='C', border=0)
             pdf.cell(20, 6, '$'+f"{float(concepto['impuestos']['Importe']):,.2f}", align='C', border=0)
             impuesto_total += float(concepto['impuestos'].get('Importe', 0.0))
             pdf.cell(20, 6, '$'+f"{float(concepto.get('Importe', 0.0)):,.2f}", align='C', border='R', ln=True)
+        if len(descripcion_full) > MAX_LENGTH_DESCRIPCION:
+            y = pdf.get_y()
+            pdf.set_y(y-3)
+            pdf.cell(70,4,'',border='L')
+            pdf.cell(60,4,descripcion_full[last_space+1:],border=0)
+            pdf.ln()
+
         pdf.set_font("Arial", 'B', 7)
         pdf.cell(25,10,'OBSERVACIONES:',border='LT')
         pdf.set_font("Arial", '', 7)

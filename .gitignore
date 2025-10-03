@@ -16,7 +16,7 @@ cdk.out
 layer.zip
 /authorizer_layer
 .DS_Store
-main.py
+main*.py
 run_test.sh
 *.xml
 *.png

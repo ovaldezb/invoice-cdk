@@ -20,8 +20,14 @@ def handler(event, context):
     try:
         if http_method == Constants.POST:
             folio = Folio(**json.loads(body))
+            existing_folio = folio_collection.find_one({"sucursal":folio.sucursal})
+            if existing_folio:
+                return {
+                    Constants.STATUS_CODE: HTTPStatus.ACCEPTED,
+                    Constants.HEADERS_KEY: headers,
+                    Constants.BODY: json.dumps({"mensaje": "Folio already exists"})
+                }
             new_folio = folio_collection.insert_one(folio.dict()).inserted_id
-            print(f"New folio created with ID: {str(new_folio)}")
             return {
                 Constants.STATUS_CODE: HTTPStatus.CREATED,
                 Constants.HEADERS_KEY: headers,
