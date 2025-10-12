@@ -24,7 +24,10 @@ if [ $# -eq 0 ]; then
     echo "   ./run_cdk.sh diff"
     echo "   ./run_cdk.sh destroy"
 else
+    echo "copying env file"
+    cp .env_dev .env
     echo "🚀 Ejecutando: cdk $@"
     echo "----------------------------------------"
-    cdk "$@"
+    cdk "$@" --profile pagos
+    echo "Termino de ejecutar cdk DEV $@"
 fi

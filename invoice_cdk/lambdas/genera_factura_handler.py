@@ -8,7 +8,8 @@ import xml.dom.minidom
 from cfdi_pdf_fpdf_generator import CFDIPDF_FPDF_Generator
 from constantes import Constants
 from pymongo import MongoClient
-from dbaccess.db_datos_factura import (guarda_factura_emitida, get_regimen_fiscal_by_clave)
+from dbaccess.db_datos_factura import (get_regimen_fiscal_by_clave)
+from dbaccess.db_factura import (guarda_factura_emitida,cancela_factura_status)
 from models.factura_emitida import FacturaEmitida
 from email_sender import EmailSender
 
@@ -49,7 +50,7 @@ def handler(event, context):
         email_receptor = body['email']
         direccion = body['direccion']
         empresa = body['empresa']
-        print(f"Timbrado: {timbrado}")
+        #print(f"Timbrado: {timbrado}")
         if http_method == Constants.POST:
             #Estos son los pasos para generar la factura
             #1. Obtener el folio actual y actualizarlo, para evitar colisiones
@@ -66,7 +67,7 @@ def handler(event, context):
             regimen_fiscal_emisor = get_regimen_fiscal_by_clave(timbrado['Emisor']['RegimenFiscal'],regimen_fiscal_collection)
             regimen_fiscal_receptor = get_regimen_fiscal_by_clave(timbrado['Receptor']['RegimenFiscalReceptor'],regimen_fiscal_collection)
             
-            #3. Obtener el token de SW
+            #3. Obtener el token de SW Sapiens
             sw_token = requests.post(
                 f"{SW_URL}/v2/security/authenticate",
                 headers={"Content-Type": APPLICATION_JSON},
@@ -85,12 +86,12 @@ def handler(event, context):
                     Constants.HEADERS_KEY: headers,
                     Constants.BODY: json.dumps({"message": factura_generada.get("message")})
                 }
-        #5. Formatear el XML para que se retornarlo al endpoint del cliente
+            #5. Formatear el XML para que se retornarlo al endpoint del cliente
             dom = xml.dom.minidom.parseString(factura_generada["data"]["cfdi"])
             pretty_xml = dom.toprettyxml(indent="  ")
             xml_escaped = pretty_xml.replace('"',r'\"')
             
-        #5.1 Obtener el token del endpoint del cliente (Tapetes)
+            #5.1 Obtener el token del endpoint del cliente (Tapetes)
             form_data = {
                 "username": USER_NAME_CLIENT,
                 "password": PASSWORD_CLIENT
@@ -101,7 +102,7 @@ def handler(event, context):
                 data=form_data
             )
             token = response.json().get("access_token")
-        #5.2 Enviar la factura generada al endpoint del cliente (Tapetes)
+            #5.2 Enviar la factura generada al endpoint del cliente (Tapetes)
             body_envio_endpoint=json.dumps({
                                 "erfc"     : timbrado['Emisor']['Rfc'],
                                 "sucursal" : sucursal,
@@ -129,20 +130,21 @@ def handler(event, context):
                 data=body_envio_endpoint
             )
 
-        #6. Guardar la factura generada en la base de datos
+            #6. Guardar la factura generada en la base de datos
             factura_generada["data"]["sucursal"]=sucursal
             factura_generada["data"]["idCertificado"]=id_certificado
             factura_generada["data"]["ticket"]=ticket
+            factura_generada["data"]["estatus"]="Vigente"
             guarda_factura_emitida(FacturaEmitida(**factura_generada["data"]), facturas_emitidas_collection)
             
-        #7 Generar PDF de la factura
+            #7 Generar PDF de la factura
             cfdi = factura_generada["data"]["cfdi"]
             uuid = factura_generada["data"]["uuid"]
             qr_code = factura_generada["data"]["qrCode"]
             cadena_original_sat = factura_generada["data"]["cadenaOriginalSAT"]
             pdf_bytes = CFDIPDF_FPDF_Generator(cfdi, qr_code, cadena_original_sat, ticket, fecha_venta,direccion,empresa,regimen_fiscal_emisor, regimen_fiscal_receptor).generate_pdf()
             pdf_b64 = base64.b64encode(pdf_bytes).decode('utf-8')
-        #8. Envia correo
+            #8. Envia correo
             if email_receptor and "@" in email_receptor:
                 email = EmailSender()
                 result = email.send_invoice(
@@ -164,7 +166,27 @@ def handler(event, context):
                     "pdf_cfdi_b64": pdf_b64
                     })
             }
-
+        elif http_method == Constants.PUT:
+            uuid = body['uuid']
+            rfc = body['rfc']
+            motivo = body['motivo']
+            #3. Obtener el token de SW Sapiens
+            sw_token = requests.post(
+                f"{SW_URL}/v2/security/authenticate",
+                headers={"Content-Type": APPLICATION_JSON},
+                data=json.dumps({"user": SW_USER_NAME, "password": SW_USER_PASSWORD})
+            ).json()
+            #4. Enviar la solicitud de cancelación a SW Sapiens
+            respuesta = factura_generada = requests.post(
+                f"{SW_URL}/cfdi33/cancel/{rfc}/{uuid}/{motivo}",
+                headers={"Authorization": f"Bearer {sw_token.get('data').get('token')}"},  # Fixed token extraction
+            ).json()
+            print(f"Respuesta cancelacion: {respuesta}")
+            return {
+                Constants.STATUS_CODE: HTTPStatus.OK,
+                Constants.HEADERS_KEY: headers,
+                Constants.BODY: json.dumps(respuesta)
+            }
     except Exception as e:
         print(f"Error: {str(e)}")
         traceback.print_exc()

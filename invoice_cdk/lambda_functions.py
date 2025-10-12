@@ -16,6 +16,7 @@ class LambdaFunctions(Construct):
     maneja_certificado_lambda: lambda_.Function
     timbres_consumo_lambda: lambda_.Function
     parsea_pdf_regimen_lambda: lambda_.Function
+    environment_handler_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -29,7 +30,8 @@ class LambdaFunctions(Construct):
             "CORS": env_vars.get("CORS")
         }
         env_cors = {
-            "CORS": env_vars.get("CORS")
+            "CORS": env_vars.get("CORS"),
+            "ENV": env_vars.get("ENV")
         }
         env_tapetes = {
             "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
@@ -94,6 +96,7 @@ class LambdaFunctions(Construct):
         self.create_maneja_certificado_lambda(env_cert, pymongo_layer)
         self.create_timbres_consumo_lambda(env, pymongo_layer)
         self.create_parsea_pdf_regimen_lambda(env_cors,pymongo_layer)
+        self.create_environment_handler_lambda(env_cors,pymongo_layer)
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -246,4 +249,17 @@ class LambdaFunctions(Construct):
             layers=[pymongo_layer],
             environment=env,
             timeout=Duration.seconds(30)
+        )
+
+    def create_environment_handler_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.environment_handler_lambda = lambda_.Function(
+            self, "EnvironmentHandlerLambda",
+            function_name="environment-handler-lambda-invoice",
+            description="Lambda function to handle environment variable requests",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="environment_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(10)
         )

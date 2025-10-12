@@ -9,7 +9,7 @@ __pycache__
 .cdk.staging
 cdk.out
 
-.env
+.env*
 /requirements
 /python
 /lambda_layers/python

@@ -24,19 +24,20 @@ class InvoiceCdkStack(Stack):
         self.cognito_invoice = CognitoConstruct(self, "CognitoAuth", self.lambda_functions.post_confirmation_lambda)
         
 
+        lambdas = {
+            "certificate_lambda": self.lambda_functions.certificate_lambda,
+            "sucursal_lambda": self.lambda_functions.sucursal_lambda,
+            "datos_factura_lambda": self.lambda_functions.datos_factura_lambda,
+            "tapetes_lambda": self.lambda_functions.tapetes_lambda,
+            "folio_lambda": self.lambda_functions.folio_lambda,
+            "genera_factura_lambda": self.lambda_functions.genera_factura_lambda,
+            "receptor_lambda": self.lambda_functions.receptor_lambda,
+            "maneja_certificado_lambda": self.lambda_functions.maneja_certificado_lambda,
+            "timbres_consumo_lambda": self.lambda_functions.timbres_consumo_lambda,
+            "parsea_pdf_regimen_lambda": self.lambda_functions.parsea_pdf_regimen_lambda,
+            "environment_handler_lambda": self.lambda_functions.environment_handler_lambda
+        }
         # Create API Gateway for the certificate lambda
-        CertificateApiGateway(self, "CertificateApiGateway", 
-                            self.lambda_functions.certificate_lambda, 
-                            self.lambda_functions.sucursal_lambda, 
-                            self.lambda_functions.datos_factura_lambda,
-                            self.lambda_functions.tapetes_lambda,
-                            self.lambda_functions.folio_lambda,
-                            self.lambda_functions.genera_factura_lambda,
-                            self.lambda_functions.receptor_lambda,
-                            self.lambda_functions.maneja_certificado_lambda,
-                            self.lambda_functions.timbres_consumo_lambda,                            
-                            self.lambda_functions.parsea_pdf_regimen_lambda,
-                            self.cognito_invoice.user_pool_cognito,
-                            )
+        CertificateApiGateway(self, "CertificateApiGateway", lambdas, self.cognito_invoice.user_pool_cognito)
 
         #AngularHost(self, "AngularHostStack")

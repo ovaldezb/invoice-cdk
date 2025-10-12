@@ -8,20 +8,20 @@ from aws_cdk import (
 from constructs import Construct
 APPLICATION_JSON = "application/json"
 class CertificateApiGateway(Construct):
-    def __init__(self, scope: Construct, id: str, certificate_lambda: _lambda.Function, 
-                 sucursal_lambda: _lambda.Function, 
-                 datos_factura_lambda: _lambda.Function, 
-                 tapetes_lambda: _lambda.Function, 
-                 folio_lambda: _lambda.Function, 
-                 genera_factura_lambda: _lambda.Function,
-                 receptor_lambda: _lambda.Function,
-                 maneja_certificado_lambda: _lambda.Function,
-                 timbres_consumo_lambda: _lambda.Function,
-                 parsea_pdf_regimen_lambda: _lambda.Function,
-                 user_pool: cognito.IUserPool):
+    def __init__(self, scope: Construct, id: str, lambdas: dict, user_pool: cognito.IUserPool):
         super().__init__(scope, id)
-       
-       
+        self.certificate_lambda: _lambda.Function = lambdas.get("certificate_lambda")
+        self.sucursal_lambda: _lambda.Function = lambdas.get("sucursal_lambda")
+        self.datos_factura_lambda: _lambda.Function = lambdas.get("datos_factura_lambda")
+        self.tapetes_lambda: _lambda.Function = lambdas.get("tapetes_lambda")
+        self.folio_lambda: _lambda.Function = lambdas.get("folio_lambda")
+        self.genera_factura_lambda: _lambda.Function = lambdas.get("genera_factura_lambda")
+        self.receptor_lambda: _lambda.Function = lambdas.get("receptor_lambda")
+        self.maneja_certificado_lambda: _lambda.Function = lambdas.get("maneja_certificado_lambda")
+        self.timbres_consumo_lambda: _lambda.Function = lambdas.get("timbres_consumo_lambda")
+        self.parsea_pdf_regimen_lambda: _lambda.Function = lambdas.get("parsea_pdf_regimen_lambda")
+        self.environment_handler_lambda: _lambda.Function = lambdas.get("environment_handler_lambda")
+
         # Create a single RestApi instance
         api = apigw.RestApi(
             self,
@@ -83,7 +83,6 @@ class CertificateApiGateway(Construct):
         #Folio resource
         folio_resource = api.root.add_resource("folio")
         
-
         #Folio resource
         genera_factura = api.root.add_resource("factura")
 
@@ -102,54 +101,62 @@ class CertificateApiGateway(Construct):
         # Parsea PDF Regimen resource
         parsea_pdf_regimen_resource = api.root.add_resource("parsea-pdf")
 
+        # Environment resource
+        environment_resource = api.root.add_resource("environment")
+
         # Integrations
         certificate_integration = apigw.LambdaIntegration(
-            certificate_lambda,
+            self.certificate_lambda,
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
         sucursal_integration = apigw.LambdaIntegration(
-            sucursal_lambda,
+            self.sucursal_lambda,
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
         datos_factura_integration = apigw.LambdaIntegration(
-            datos_factura_lambda,
+            self.datos_factura_lambda,
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
         tapetes_integration = apigw.LambdaIntegration(
-            tapetes_lambda,
+            self.tapetes_lambda,
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )   
 
         folio_integration = apigw.LambdaIntegration(
-            folio_lambda,
+            self.folio_lambda,
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
         genera_factura_integration = apigw.LambdaIntegration(
-            genera_factura_lambda,
+            self.genera_factura_lambda,
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
         receptor_integration = apigw.LambdaIntegration(
-            receptor_lambda,
+            self.receptor_lambda,
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
         maneja_certificado_integration = apigw.LambdaIntegration(
-            maneja_certificado_lambda,
+            self.maneja_certificado_lambda,
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
         consumo_timbres_integration = apigw.LambdaIntegration(
-            timbres_consumo_lambda,
+            self.timbres_consumo_lambda,
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
         parsea_pdf_regimen_integration = apigw.LambdaIntegration(
-            parsea_pdf_regimen_lambda,
+            self.parsea_pdf_regimen_lambda,
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
+        )
+
+        environment_integration = apigw.LambdaIntegration(
+            self.environment_handler_lambda,
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
@@ -177,6 +184,7 @@ class CertificateApiGateway(Construct):
 
         #Datos Genera Factura methods, no lleva authorizer
         genera_factura.add_method("POST", genera_factura_integration)
+        genera_factura.add_method("PUT", genera_factura_integration)
 
         #Datos Receptor methods, no lleva authorizer
         receptor_resource.add_method("POST", receptor_integration)
@@ -192,3 +200,6 @@ class CertificateApiGateway(Construct):
 
         # Parsea PDF Regimen methods
         parsea_pdf_regimen_resource.add_method("POST", parsea_pdf_regimen_integration)
+
+        # Environment methods
+        environment_resource.add_method("GET", environment_integration)
