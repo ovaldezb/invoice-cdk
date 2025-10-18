@@ -54,7 +54,7 @@ def handler(event, context):
         if http_method == Constants.POST:
             #Estos son los pasos para generar la factura
             #1. Obtener el folio actual y actualizarlo, para evitar colisiones
-            folio = folio_collection.find_one_and_update({"sucursal": sucursal}, {"$inc": {"noFolio": 1}}, return_document=True)
+            folio = folio_collection.find_one_and_update({"sucursal": sucursal}, {"$inc": {"noFolio": 1}}, return_document=False)
             #2. Asignar el folio al timbrado
             if not folio:
                 return {

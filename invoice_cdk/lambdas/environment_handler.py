@@ -12,14 +12,14 @@ def handler(event, context):
     headers["Access-Control-Allow-Origin"] = valida_cors(origin)
     if http_method == "GET":
         return {
-            "statusCode": 200,
-            "body": json.dumps({"environment": ENV}),
-            "headers": headers
+            Constants.STATUS_CODE: 200,
+            Constants.BODY: json.dumps({"environment": ENV}),
+            Constants.HEADERS_KEY: headers
         }
     else:
         return {
-            "statusCode": 405,
-            "body": "Method Not Allowed",
-            "headers": headers
+            Constants.STATUS_CODE: 405,
+            Constants.BODY: json.dumps({"error": "Method Not Allowed"}),
+            Constants.HEADERS_KEY: headers
         }
 
