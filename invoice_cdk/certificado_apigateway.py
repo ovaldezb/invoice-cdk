@@ -8,7 +8,7 @@ from aws_cdk import (
 from constructs import Construct
 APPLICATION_JSON = "application/json"
 class CertificateApiGateway(Construct):
-    def __init__(self, scope: Construct, id: str, lambdas: dict, user_pool: cognito.IUserPool):
+    def __init__(self, scope: Construct, id: str, lambdas: dict, user_pool: cognito.UserPool):
         super().__init__(scope, id)
         self.certificate_lambda: _lambda.Function = lambdas.get("certificate_lambda")
         self.sucursal_lambda: _lambda.Function = lambdas.get("sucursal_lambda")
@@ -56,7 +56,6 @@ class CertificateApiGateway(Construct):
 
         # Create authorizer (preferir custom authorizer si está disponible)
         
-        #user_pool = cognito.UserPool.from_user_pool_id(self, "ImportedUserPool", user_pool_id)
         authorizer = apigw.CognitoUserPoolsAuthorizer(
             self,
             "CognitoAuthorizer",
@@ -161,20 +160,20 @@ class CertificateApiGateway(Construct):
         )
 
         # Certificate methods (CON CUSTOM AUTHORIZER)
-        certificates_resource.add_method("POST", certificate_integration,)
-        certificates_resource.add_method("GET", certificate_integration, authorization_type=apigw.AuthorizationType.COGNITO, authorizer=authorizer)
-        certificate_id_resource.add_method("GET", certificate_integration)
-        certificate_id_resource.add_method("PUT", certificate_integration)
-        certificate_id_resource.add_method("DELETE", certificate_integration)#, authorizer=authorizer)
+        certificates_resource.add_method("POST", certificate_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+        certificates_resource.add_method("GET", certificate_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+        certificate_id_resource.add_method("GET", certificate_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+        certificate_id_resource.add_method("PUT", certificate_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+        certificate_id_resource.add_method("DELETE", certificate_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
 
         # Sucursal methods (CON CUSTOM AUTHORIZER)
-        sucursales_resource.add_method("POST", sucursal_integration)
-        sucursal_id_resource.add_method("GET", sucursal_integration)
-        sucursal_id_resource.add_method("PUT", sucursal_integration)#, authorizer=authorizer)
-        sucursal_id_resource.add_method("DELETE", sucursal_integration)#, authorizer=authorizer)
+        sucursales_resource.add_method("POST", sucursal_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+        sucursal_id_resource.add_method("GET", sucursal_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+        sucursal_id_resource.add_method("PUT", sucursal_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+        sucursal_id_resource.add_method("DELETE", sucursal_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
 
         # Datos Factura methods, no lleva authorizer
-        datos_factura.add_method("GET", datos_factura_integration)#, authorizer=datos_factura_authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+        datos_factura.add_method("GET", datos_factura_integration)
 
         #Datos Tapetes methods, obtiene el ticket de venta, no lleva authorizer
         tapetes_id_resource.add_method("GET", tapetes_integration)
@@ -192,11 +191,13 @@ class CertificateApiGateway(Construct):
         receptor_id_resource.add_method("PUT", receptor_integration)
 
         # Maneja Certificado methods
-        maneja_certificado_resource.add_method("POST", maneja_certificado_integration)
-        maneja_certificado_id_resource.add_method("DELETE", maneja_certificado_integration)
+        maneja_certificado_resource.add_method("POST", maneja_certificado_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+        maneja_certificado_resource.add_method("PUT", maneja_certificado_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+        maneja_certificado_id_resource.add_method("DELETE", maneja_certificado_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+
 
         # Consumo Timbres methods
-        timbre_usuario_resource.add_method("GET", consumo_timbres_integration)
+        timbre_usuario_resource.add_method("GET", consumo_timbres_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
 
         # Parsea PDF Regimen methods
         parsea_pdf_regimen_resource.add_method("POST", parsea_pdf_regimen_integration)

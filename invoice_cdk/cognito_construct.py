@@ -13,8 +13,8 @@ class CognitoConstruct(Construct):
     """
     Construct para crear y configurar Amazon Cognito User Pool y Client
     """
-    
-    def __init__(self, scope: Construct, construct_id: str, postConfirmationLambda, **kwargs) -> None:
+
+    def __init__(self, scope: Construct, construct_id: str, post_confirmation_lambda, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         
         # Crear User Pool de Cognito
@@ -84,11 +84,11 @@ class CognitoConstruct(Construct):
         self._create_user_groups()
         self.user_pool.add_trigger(
             cognito.UserPoolOperation.POST_CONFIRMATION,
-            postConfirmationLambda
+            post_confirmation_lambda
         )
 
         #permiso para lambda add users
-        postConfirmationLambda.add_to_role_policy(
+        post_confirmation_lambda.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["cognito-idp:AdminAddUserToGroup"],
                 resources=["*"]
