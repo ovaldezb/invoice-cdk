@@ -20,11 +20,12 @@ from dbaccess.db_certificado import (
     get_certificate_by_id
 )
 from dbaccess.db_sucursal import(delete_sucursal)
-
+#Esta clase maneja los certificados a nivel del PAC SW Sapien
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client[os.getenv("DB_NAME")]  
 certificates_collection = db["certificates"]
 sucursal_collection = db["sucursales"]
+folio_collection = db["folios"]
 SW_USER_NAME = os.getenv("SW_USER_NAME")
 SW_USER_PASSWORD = os.getenv("SW_USER_PASSWORD")
 SW_URL = os.getenv("SW_URL")
@@ -43,6 +44,7 @@ def handler(event, context):
             sucursales = certificate["sucursales"] 
             for sucursal in sucursales:
                 delete_sucursal(sucursal["_id"], sucursal_collection)
+                folio_collection.delete_one({"sucursal": sucursal["codigo_sucursal"]})
             delete_certificate(cert_id, certificates_collection)
             sw_token = requests.post(
                     f"{SW_URL}/v2/security/authenticate",

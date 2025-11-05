@@ -33,8 +33,12 @@ class RegimenFiscalPyMuPDFParser:
         if fitz is None:
             raise RuntimeError("PyMuPDF (fitz) no está disponible. Instala PyMuPDF.")
         txt = []
+        print(f"Extrayendo texto del PDF en: {path}")
         with fitz.open(path) as doc:
+            print(f"Abriendo PDF: {path}")
+            print(f"Cantidad de páginas: {doc.page_count}")
             for page in doc:
+                print(f"texto {page.get_text("words")}")
                 # "text" mode devuelve texto con saltos de línea razonables
                 txt.append(page.get_text("text"))
         return "\n".join(txt)
@@ -90,6 +94,7 @@ class RegimenFiscalPyMuPDFParser:
         return None
 
     def _extract_all_from_text(self, text: str) -> Dict[str, Any]:
+        print(text)
         normalized = re.sub(r"[\t\u00A0]+", " ", text)
         lines = [l.strip() for l in normalized.splitlines() if l.strip()]
         # Corregir patrones para que el primer grupo capture el valor real (nombre completo)

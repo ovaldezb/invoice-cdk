@@ -15,6 +15,7 @@ headers = Constants.HEADERS.copy()
 def handler(event, context):
     http_method = event["httpMethod"]
     body = event.get("body")
+    path_parameters = event.get("pathParameters")
     origin = event.get("headers", {}).get("origin")
     headers["Access-Control-Allow-Origin"] = valida_cors(origin)
     try:
@@ -32,6 +33,38 @@ def handler(event, context):
                 Constants.STATUS_CODE: HTTPStatus.CREATED,
                 Constants.HEADERS_KEY: headers,
                 Constants.BODY: json.dumps({"id_folio": str(new_folio)})
+            }
+        elif http_method == Constants.PUT:
+            data = json.loads(body)
+            sucursal = data["codigo_sucursal"]
+            folio = data["folio"]
+            result = folio_collection.update_one({"sucursal": sucursal}, {"$set": {"noFolio": folio}})
+
+            if result.matched_count == 0:
+                return {
+                    Constants.STATUS_CODE: HTTPStatus.NOT_FOUND,
+                    Constants.HEADERS_KEY: headers,
+                    Constants.BODY: json.dumps({"mensaje": "Folio not found"})
+                }
+            return {
+                Constants.STATUS_CODE: HTTPStatus.OK,
+                Constants.HEADERS_KEY: headers,
+                Constants.BODY: json.dumps({"mensaje": "Folio updated"})
+            }
+        elif http_method == Constants.GET:
+            sucursal = path_parameters.get("sucursal")
+            folio_data = folio_collection.find_one({"sucursal": sucursal})
+            if not folio_data:
+                return {
+                    Constants.STATUS_CODE: HTTPStatus.NOT_FOUND,
+                    Constants.HEADERS_KEY: headers,
+                    Constants.BODY: json.dumps({"mensaje": "Folio not found"})
+                }
+            folio_data["_id"] = str(folio_data["_id"])
+            return {
+                Constants.STATUS_CODE: HTTPStatus.OK,
+                Constants.HEADERS_KEY: headers,
+                Constants.BODY: json.dumps({"folio": folio_data})
             }
     except Exception as e:
         return {

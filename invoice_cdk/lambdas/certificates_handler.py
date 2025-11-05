@@ -16,11 +16,12 @@ from dbaccess.db_certificado import (
 )
 from dbaccess.db_sucursal import(get_sucursal_by_id, delete_sucursal)
 
-
+#Esta clase maneja los certificados a nivel de base de datos
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client[os.getenv("DB_NAME")]
 certificates_collection = db["certificates"]
 sucursal_collection = db["sucursales"]
+folio_collection = db["folios"]
 
 headers = Constants.HEADERS.copy()
 
@@ -43,6 +44,7 @@ def handler(event, context):
                 sucursales=[],
                 usuario=data["usuario"]
             )
+            print("Adding certificate:", certificado)
             new_certificate = add_certificate(certificado, certificates_collection)
             return {
                 Constants.STATUS_CODE: HTTPStatus.CREATED,
@@ -61,6 +63,7 @@ def handler(event, context):
             }
 
         elif http_method == Constants.GET:
+            print("GET method called with path parameters:", path_parameters)
             usuario = path_parameters.get("id")
             certificates = list_certificates(usuario,certificates_collection)
             for cert in certificates:
@@ -86,6 +89,7 @@ def handler(event, context):
             sucursales = certificate["sucursales"] 
             for sucursal in sucursales:
                 delete_sucursal(sucursal["_id"], sucursal_collection)
+                folio_collection.delete_one({"sucursal": sucursal["codigo_sucursal"]})
             delete_certificate(cert_id, certificates_collection)
             
             return {

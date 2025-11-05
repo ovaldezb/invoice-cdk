@@ -9,13 +9,15 @@ from cfdi_pdf_fpdf_generator import CFDIPDF_FPDF_Generator
 from constantes import Constants
 from pymongo import MongoClient
 from dbaccess.db_datos_factura import (get_regimen_fiscal_by_clave)
-from dbaccess.db_factura import (guarda_factura_emitida,cancela_factura_status)
+from dbaccess.db_factura import (guarda_factura_emitida, get_factura_by_ticket)
 from models.factura_emitida import FacturaEmitida
 from email_sender import EmailSender
+from datetime import datetime, timezone
 
 SW_USER_NAME = os.getenv("SW_USER_NAME")
 SW_USER_PASSWORD = os.getenv("SW_USER_PASSWORD")
 SW_URL = os.getenv("SW_URL")
+ENVIRONMENT = os.getenv("ENV")
 USER_NAME_CLIENT = os.getenv("TAPETES_USER_NAME")
 PASSWORD_CLIENT = os.getenv("TAPETES_PASSWORD")
 TAPETES_API_URL = os.getenv("TAPETES_API_URL")
@@ -27,6 +29,7 @@ db = client[os.getenv("DB_NAME")]
 facturas_emitidas_collection = db["facturasemitidas"]
 regimen_fiscal_collection = db["regimenfiscal"]
 folio_collection = db["folios"]
+ticket_timbrado_collection = db["ticket_timbrado"]
 
 APPLICATION_JSON = "application/json"
 headersEndpoint = {
@@ -53,6 +56,47 @@ def handler(event, context):
         #print(f"Timbrado: {timbrado}")
         if http_method == Constants.POST:
             #Estos son los pasos para generar la factura
+            #0 revisar si ya existe la factura para el ticket
+            """form_data = {
+                    "username": USER_NAME_CLIENT,
+                    "password": PASSWORD_CLIENT
+            }
+            response = requests.post(
+                f"{TAPETES_API_URL}token", 
+                headers=headersEndpoint, 
+                data=form_data
+            )
+            token = response.json().get("access_token")
+
+            ticket_response = requests.post(
+                    f"{TAPETES_API_URL}ticket_estado/",
+                    headers={"Accept": APPLICATION_JSON, "Content-Type": APPLICATION_JSON, "Authorization": f"Bearer {token}"},
+                    data=json.dumps({"ticket": ticket})
+                )
+            ticket_info = ticket_response.json().get("detail")
+            if ticket_info != "Ticket Libre":
+                return {
+                    "statusCode": 404,
+                    "headers": headers,
+                    "body": json.dumps({"message": f"{ticket}: {ticket_info} "})
+                }
+
+            factura_existente = get_factura_by_ticket(ticket, facturas_emitidas_collection)
+            if factura_existente:
+                return {
+                    "statusCode": 400,
+                    "headers": headers,
+                    "body": json.dumps({"message": f"La factura para el ticket {ticket} ya fue generada"})
+                }
+            """
+            try:
+                ticket_timbrado_collection.insert_one({"ticket": ticket, "fechaTimbrado": datetime.now(timezone.utc).isoformat()})
+            except Exception as e:
+                return {
+                    "statusCode": 500,
+                    "headers": headers,
+                    "body": json.dumps({"message": f"Ya existe una solicitud de timbrado para el ticket: {ticket}"})
+                }
             #1. Obtener el folio actual y actualizarlo, para evitar colisiones
             folio = folio_collection.find_one_and_update({"sucursal": sucursal}, {"$inc": {"noFolio": 1}}, return_document=False)
             #2. Asignar el folio al timbrado
@@ -81,6 +125,9 @@ def handler(event, context):
             ).json()
             #4.1 Validar si hubo error en la generación de la factura
             if factura_generada.get("status") == 'error':
+                #revisar este punto si se debe decrementar el folio
+                #folio_collection.find_one_and_update({"sucursal": sucursal}, {"$inc": {"noFolio": -1}}, return_document=False)
+                ticket_timbrado_collection.delete_one({"ticket": ticket})
                 return {
                     Constants.STATUS_CODE: HTTPStatus.BAD_REQUEST,
                     Constants.HEADERS_KEY: headers,
@@ -90,20 +137,21 @@ def handler(event, context):
             dom = xml.dom.minidom.parseString(factura_generada["data"]["cfdi"])
             pretty_xml = dom.toprettyxml(indent="  ")
             xml_escaped = pretty_xml.replace('"',r'\"')
-            
+            print(f"Environment: {ENVIRONMENT}")
+            if(ENVIRONMENT == 'Prod'):
             #5.1 Obtener el token del endpoint del cliente (Tapetes)
-            form_data = {
-                "username": USER_NAME_CLIENT,
-                "password": PASSWORD_CLIENT
-            }
-            response = requests.post(
-                f"{TAPETES_API_URL}token", 
-                headers=headersEndpoint, 
-                data=form_data
-            )
-            token = response.json().get("access_token")
+                form_data = {
+                    "username": USER_NAME_CLIENT,
+                    "password": PASSWORD_CLIENT
+                }
+                response = requests.post(
+                    f"{TAPETES_API_URL}token", 
+                    headers=headersEndpoint, 
+                    data=form_data
+                )
+                token = response.json().get("access_token")
             #5.2 Enviar la factura generada al endpoint del cliente (Tapetes)
-            body_envio_endpoint=json.dumps({
+                body_envio_endpoint=json.dumps({
                                 "erfc"     : timbrado['Emisor']['Rfc'],
                                 "sucursal" : sucursal,
                                 "serie"    : timbrado['Serie'],
@@ -124,11 +172,11 @@ def handler(event, context):
                                 "xml_cfdi_b64" : base64.b64encode(xml_escaped.encode()).decode()
                                 })
 
-            requests.post(
-                f"{TAPETES_API_URL}recibefacturas/",
-                headers={"Accept": APPLICATION_JSON, "Content-Type": APPLICATION_JSON, "Authorization": f"Bearer {token}"},
-                data=body_envio_endpoint
-            )
+                requests.post(
+                    f"{TAPETES_API_URL}recibefacturas/",
+                    headers={"Accept": APPLICATION_JSON, "Content-Type": APPLICATION_JSON, "Authorization": f"Bearer {token}"},
+                    data=body_envio_endpoint
+                )
 
             #6. Guardar la factura generada en la base de datos
             factura_generada["data"]["sucursal"]=sucursal

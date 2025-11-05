@@ -1,4 +1,4 @@
-from aws_cdk import Duration, aws_lambda as lambda_
+from aws_cdk import Duration, aws_lambda as lambda_, RemovalPolicy
 from constructs import Construct
 from dotenv import dotenv_values
 
@@ -7,7 +7,7 @@ class LambdaFunctions(Construct):
     post_confirmation_lambda: lambda_.Function
     certificate_lambda: lambda_.Function
     sucursal_lambda: lambda_.Function
-    custom_authorizer_lambda: lambda_.Function
+    #custom_authorizer_lambda: lambda_.Function
     datos_factura_lambda: lambda_.Function
     tapetes_lambda: lambda_.Function
     folio_lambda: lambda_.Function
@@ -27,7 +27,8 @@ class LambdaFunctions(Construct):
             "VERSION":env_vars.get("VERSION"),
             "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
             "DB_NAME": env_vars.get("MONGO_DB"),
-            "CORS": env_vars.get("CORS")
+            "CORS": env_vars.get("CORS"),
+            "ENV": env_vars.get("ENV")
         }
         env_cors = {
             "CORS": env_vars.get("CORS"),
@@ -39,7 +40,8 @@ class LambdaFunctions(Construct):
             "TAPETES_API_URL": env_vars.get("TAPETES_API_URL"),
             "TAPETES_USER_NAME": env_vars.get("TAPETES_USER_NAME"),
             "TAPETES_PASSWORD": env_vars.get("TAPETES_PASSWORD"),
-            "CORS": env_vars.get("CORS")
+            "CORS": env_vars.get("CORS"),
+            "ENV": env_vars.get("ENV")
         }
 
         env_fact ={
@@ -58,6 +60,7 @@ class LambdaFunctions(Construct):
             "SMTP_FROM": env_vars.get("SMTP_FROM"),
             "SMTP_REPLY_TO": env_vars.get("SMTP_REPLY_TO"),
             "CORS": env_vars.get("CORS"),
+            "ENV": env_vars.get("ENV")
         }
 
         env_cert = {
@@ -67,6 +70,7 @@ class LambdaFunctions(Construct):
             "CORS": env_vars.get("CORS"),
             "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
             "DB_NAME": env_vars.get("MONGO_DB"),
+            "ENV": env_vars.get("ENV")
         }
 
         pymongo_layer = lambda_.LayerVersion(
@@ -76,18 +80,10 @@ class LambdaFunctions(Construct):
             description="Capa con pymongo"
         )
         
-        # Layer para custom authorizer
-        authorizer_layer = lambda_.LayerVersion(
-            self, "authorizer-layer",
-            code=lambda_.Code.from_asset("authorizer_layer"),
-            compatible_runtimes=[lambda_.Runtime.PYTHON_3_12],
-            description="Capa con PyJWT y requests para authorizer"
-        )
         
         self.create_post_confirmation_lambda(env)
         self.create_certificate_lambda(env, pymongo_layer)
         self.create_sucursal_lambda(env, pymongo_layer)
-        self.create_custom_authorizer_lambda(env, authorizer_layer)
         self.create_datos_factura_lambda(env, pymongo_layer)
         self.create_tapetes_lambda(env_tapetes, pymongo_layer)
         self.create_folio_lambda(env, pymongo_layer)
@@ -118,7 +114,16 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env,
-            timeout=Duration.seconds(10)  # Optional: Set a timeout for the Lambda function
+            timeout=Duration.seconds(10),  # Optional: Set a timeout for the Lambda function
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        version = self.certificate_lambda.current_version
+        self.certificate_alias = lambda_.Alias(
+            self, "CertificateLambdaAlias",
+            alias_name="Prod",
+            version=version
         )
 
     def create_sucursal_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
@@ -131,22 +136,18 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env,
-            timeout=Duration.seconds(10)  # Optional: Set a timeout for the Lambda function
+            timeout=Duration.seconds(10),  # Optional: Set a timeout for the Lambda function
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.sucursal_alias = lambda_.Alias(
+            self, "SucursalLambdaAlias",
+            alias_name="Prod",
+            version=self.sucursal_lambda.current_version
         )
 
-    def create_custom_authorizer_lambda(self, env: dict, authorizer_layer: lambda_.LayerVersion):
-        self.custom_authorizer_lambda = lambda_.Function(
-            self, "CustomAuthorizerLambda",
-            function_name="custom-authorizer-lambda-invoice",
-            description="Lambda function for custom authorization",
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            handler="simple_authorizer.handler",
-            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
-            layers=[authorizer_layer],
-            environment=env,
-            timeout=Duration.seconds(10)
-        )
-
+    
     def create_datos_factura_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
         self.datos_factura_lambda = lambda_.Function(
             self, "DatosFacturaLambda",
@@ -157,7 +158,15 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env,
-            timeout=Duration.seconds(10)  # Optional: Set a timeout for the Lambda function
+            timeout=Duration.seconds(10),  # Optional: Set a timeout for the Lambda function
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.datos_factura_alias = lambda_.Alias(
+            self, "DatosFacturaLambdaAlias",
+            alias_name="Prod",
+            version=self.datos_factura_lambda.current_version
         )
 
     def create_tapetes_lambda(self, env_tapetes: dict, pymongo_layer: lambda_.LayerVersion):
@@ -170,7 +179,15 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env_tapetes,
-            timeout=Duration.seconds(10)  # Optional: Set a timeout for the Lambda function
+            timeout=Duration.seconds(10),  # Optional: Set a timeout for the Lambda function
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.tapetes_alias = lambda_.Alias(
+            self, "TapetesLambdaAlias",
+            alias_name="Prod",
+            version=self.tapetes_lambda.current_version
         )
 
     def create_folio_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
@@ -183,7 +200,15 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env,
-            timeout=Duration.seconds(10)  # Optional: Set a timeout for the Lambda function
+            timeout=Duration.seconds(10),  # Optional: Set a timeout for the Lambda function
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.folio_alias = lambda_.Alias(
+            self, "FolioLambdaAlias",
+            alias_name="Prod",
+            version=self.folio_lambda.current_version
         )
 
     def create_genera_factura_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
@@ -196,7 +221,15 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,
-            timeout=Duration.seconds(10)
+            timeout=Duration.seconds(10),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.genera_factura_alias = lambda_.Alias(
+            self, "GeneraFacturaLambdaAlias",
+            alias_name="Prod",
+            version=self.genera_factura_lambda.current_version
         )
 
     def create_receptor_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
@@ -209,7 +242,15 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,
-            timeout=Duration.seconds(10)
+            timeout=Duration.seconds(10),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.receptor_alias = lambda_.Alias(
+            self, "ReceptorLambdaAlias",
+            alias_name="Prod",
+            version=self.receptor_lambda.current_version
         )
 
     def create_maneja_certificado_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
@@ -222,7 +263,15 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,
-            timeout=Duration.seconds(10)
+            timeout=Duration.seconds(10),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.maneja_certificado_alias = lambda_.Alias(
+            self, "ManejaCertificadoLambdaAlias",
+            alias_name="Prod",
+            version=self.maneja_certificado_lambda.current_version
         )
 
     def create_timbres_consumo_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
@@ -235,7 +284,15 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,
-            timeout=Duration.seconds(10)
+            timeout=Duration.seconds(10),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.timbres_consumo_alias = lambda_.Alias(
+            self, "TimbresConsumoLambdaAlias",
+            alias_name="Prod",
+            version=self.timbres_consumo_lambda.current_version
         )
 
     def create_parsea_pdf_regimen_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
@@ -248,7 +305,15 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,
-            timeout=Duration.seconds(30)
+            timeout=Duration.seconds(30),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.parsea_pdf_regimen_alias = lambda_.Alias(
+            self, "ParseaPDFRegimenLambdaAlias",
+            alias_name="Prod",
+            version=self.parsea_pdf_regimen_lambda.current_version
         )
 
     def create_environment_handler_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
@@ -261,5 +326,13 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,
-            timeout=Duration.seconds(10)
+            timeout=Duration.seconds(10),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.environment_handler_alias = lambda_.Alias(
+            self, "EnvironmentHandlerLambdaAlias",
+            alias_name="Prod",
+            version=self.environment_handler_lambda.current_version
         )

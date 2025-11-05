@@ -6,5 +6,8 @@ def guarda_factura_emitida(factura_emitida: FacturaEmitida, facturas_emitidas_co
 def get_factura_by_uuid(uuid: str, facturas_emitidas_collection):
     return facturas_emitidas_collection.find_one({"uuid": uuid})
 
+def get_factura_by_ticket(ticket: str, facturas_emitidas_collection):
+    return facturas_emitidas_collection.find_one({"ticket": ticket})
+
 def cancela_factura_status(uuid: str,  facturas_emitidas_collection):
     facturas_emitidas_collection.update_one({"uuid": uuid}, {"$set": {"estatus": "Cancelada"}})

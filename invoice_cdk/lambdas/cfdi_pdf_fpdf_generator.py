@@ -72,8 +72,10 @@ class CFDIPDF_FPDF_Generator():
         pdf.line(10, pdf.get_y(), 200, pdf.get_y())  # Línea de 10mm a 200mm en la posición vertical actual
         
         # Emisor/Receptor
-        pdf.image(self.empresa + '-logo.png', x=10, y=18, w=40)  # Ajusta la ruta y tamaño del logo según sea necesario
-        
+        if(self.empresa != 'FARZIN' and self.empresa != 'TUFAN'):
+            pdf.image('TUFAN-logo.png', x=10, y=18, w=40)  # Ajusta la ruta y tamaño del logo según sea necesario
+        else:
+            pdf.image(self.empresa + '-logo.png', x=10, y=18, w=40)  # Ajusta la ruta y tamaño del logo según sea necesario
         pdf.set_font("Arial", '', 8)
         emisor = self.data['emisor']
         pdf.cell(42,4, '')

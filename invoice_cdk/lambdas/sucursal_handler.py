@@ -19,6 +19,7 @@ client = MongoClient(os.getenv("MONGODB_URI"))
 db = client[os.getenv("DB_NAME")]
 sucursal_collection = db["sucursales"]
 certificado_collection = db["certificates"]
+folio_collection = db["folios"]
 
 def handler(event, context):
     http_method = event["httpMethod"]
@@ -29,6 +30,7 @@ def handler(event, context):
 
     try:
         if http_method == Constants.POST:
+            print("Creating new sucursal with body:", body)
             sucursal_data = json.loads(body)
             sucursal = Sucursal(**sucursal_data)
             sucursal_id = add_sucursal(sucursal, sucursal_collection)        
@@ -87,11 +89,13 @@ def handler(event, context):
                 #print(f"Deleting certificate with ID: {certificado_found}")
                 sucursales = certificado_found.get("sucursales", [])
                 new_sucursales = []
-                for sucursal in sucursales:
-                    if sucursal["_id"] != sucursal_id:
-                        new_sucursales.append(sucursal)
+                for sucursal_loop in sucursales:
+                    if sucursal_loop["_id"] != sucursal_id:
+                        new_sucursales.append(sucursal_loop)
                 certificado_found["sucursales"] = new_sucursales
                 update_certificate(certificado_found["_id"], certificado_found, certificado_collection)
+
+            folio_collection.delete_one({"sucursal": sucursal["codigo_sucursal"]})
             delete_sucursal(sucursal_id, sucursal_collection)
             return {
                 Constants.STATUS_CODE: HTTPStatus.OK,

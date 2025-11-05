@@ -87,7 +87,12 @@ def handler(event, context):
 
         parser = RegimenFiscalPyMuPDFParser()
         datos_csf = parser.extract_from_bytes(pdf_bytes)
-
+        if not datos_csf["razonSocial"] and not datos_csf["Rfc"]:
+            return {
+                Constants.STATUS_CODE: HTTPStatus.NOT_FOUND,
+                Constants.BODY: json.dumps({"error": "No se pudieron extraer datos del PDF, revisa que el formato sea correcto. Es posible que el PDF sea una imagen"}),
+                Constants.HEADERS_KEY: headers
+            }
         return {
             Constants.STATUS_CODE: HTTPStatus.OK,
             Constants.BODY: json.dumps({"csf": datos_csf}),
