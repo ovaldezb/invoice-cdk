@@ -57,38 +57,6 @@ def handler(event, context):
         if http_method == Constants.POST:
             #Estos son los pasos para generar la factura
             #0 revisar si ya existe la factura para el ticket
-            """form_data = {
-                    "username": USER_NAME_CLIENT,
-                    "password": PASSWORD_CLIENT
-            }
-            response = requests.post(
-                f"{TAPETES_API_URL}token", 
-                headers=headersEndpoint, 
-                data=form_data
-            )
-            token = response.json().get("access_token")
-
-            ticket_response = requests.post(
-                    f"{TAPETES_API_URL}ticket_estado/",
-                    headers={"Accept": APPLICATION_JSON, "Content-Type": APPLICATION_JSON, "Authorization": f"Bearer {token}"},
-                    data=json.dumps({"ticket": ticket})
-                )
-            ticket_info = ticket_response.json().get("detail")
-            if ticket_info != "Ticket Libre":
-                return {
-                    "statusCode": 404,
-                    "headers": headers,
-                    "body": json.dumps({"message": f"{ticket}: {ticket_info} "})
-                }
-
-            factura_existente = get_factura_by_ticket(ticket, facturas_emitidas_collection)
-            if factura_existente:
-                return {
-                    "statusCode": 400,
-                    "headers": headers,
-                    "body": json.dumps({"message": f"La factura para el ticket {ticket} ya fue generada"})
-                }
-            """
             try:
                 ticket_timbrado_collection.insert_one({"ticket": ticket, "fechaTimbrado": datetime.now(timezone.utc).isoformat()})
             except Exception as e:

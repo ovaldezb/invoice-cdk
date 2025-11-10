@@ -52,15 +52,16 @@ class LambdaFunctions(Construct):
             "TAPETES_USER_NAME": env_vars.get("TAPETES_USER_NAME"),
             "TAPETES_PASSWORD": env_vars.get("TAPETES_PASSWORD"),
             "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
-            "DB_NAME": env_vars.get("MONGO_DB"),
-            "SMTP_HOST": env_vars.get("SMTP_HOST"),
-            "SMTP_PORT": env_vars.get("SMTP_PORT"),
-            "SMTP_USER": env_vars.get("SMTP_USER"),
+            "DB_NAME":       env_vars.get("MONGO_DB"),
+            "SMTP_HOST":     env_vars.get("SMTP_HOST"),
+            "SMTP_PORT":     env_vars.get("SMTP_PORT"),
+            "SMTP_USER":     env_vars.get("SMTP_USER"),
             "SMTP_PASSWORD": env_vars.get("SMTP_PASSWORD"),
-            "SMTP_FROM": env_vars.get("SMTP_FROM"),
+            "SMTP_FROM":     env_vars.get("SMTP_FROM"),
             "SMTP_REPLY_TO": env_vars.get("SMTP_REPLY_TO"),
-            "CORS": env_vars.get("CORS"),
-            "ENV": env_vars.get("ENV")
+            "SMTP_BCC":      env_vars.get("SMTP_BCC"),
+            "CORS":          env_vars.get("CORS"),
+            "ENV":           env_vars.get("ENV")
         }
 
         env_cert = {
