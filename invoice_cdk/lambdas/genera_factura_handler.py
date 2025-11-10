@@ -42,6 +42,8 @@ headers = {
 
 
 def handler(event, context):
+    folio_incrementado = False
+    sucursal = None
     try:
         http_method = event["httpMethod"]
         body = json.loads(event.get("body"))
@@ -74,6 +76,7 @@ def handler(event, context):
                     "headers": headers,
                     "body": json.dumps({"message": f"No se encontró folio para la sucursal {sucursal}, favor contactar al administador"})
                 }
+            folio_incrementado = True  # Marcar que se incrementó el folio
             timbrado['Folio'] = folio['noFolio']
             #2.1 obtener el regimen fiscal del emisor
             regimen_fiscal_emisor = get_regimen_fiscal_by_clave(timbrado['Emisor']['RegimenFiscal'],regimen_fiscal_collection)
@@ -93,8 +96,9 @@ def handler(event, context):
             ).json()
             #4.1 Validar si hubo error en la generación de la factura
             if factura_generada.get("status") == 'error':
-                #revisar este punto si se debe decrementar el folio
-                #folio_collection.find_one_and_update({"sucursal": sucursal}, {"$inc": {"noFolio": -1}}, return_document=False)
+                # Decrementar el folio porque hubo un error
+                folio_collection.find_one_and_update({"sucursal": sucursal}, {"$inc": {"noFolio": -1}}, return_document=False)
+                folio_incrementado = False  # Ya se decrementó
                 ticket_timbrado_collection.delete_one({"ticket": ticket})
                 return {
                     Constants.STATUS_CODE: HTTPStatus.BAD_REQUEST,
@@ -206,6 +210,13 @@ def handler(event, context):
     except Exception as e:
         print(f"Error: {str(e)}")
         traceback.print_exc()
+        # Si el folio fue incrementado y hubo un error, decrementarlo
+        if folio_incrementado and sucursal:
+            try:
+                folio_collection.find_one_and_update({"sucursal": sucursal}, {"$inc": {"noFolio": -1}}, return_document=False)
+                print(f"Folio decrementado para sucursal {sucursal} debido a error")
+            except Exception as folio_error:
+                print(f"Error al decrementar folio: {str(folio_error)}")
         return {
             Constants.STATUS_CODE: HTTPStatus.INTERNAL_SERVER_ERROR,
             Constants.HEADERS_KEY: headers,

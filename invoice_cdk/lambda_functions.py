@@ -222,7 +222,7 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,
-            timeout=Duration.seconds(10),
+            timeout=Duration.seconds(60),  # Aumentado a 60 segundos para timbrado, PDF y envío de email
             current_version_options=lambda_.VersionOptions(
                 removal_policy=RemovalPolicy.RETAIN
             )
