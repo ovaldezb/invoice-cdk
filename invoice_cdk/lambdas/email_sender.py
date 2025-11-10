@@ -14,6 +14,7 @@ SMTP_PORT=os.getenv('SMTP_PORT')
 SMTP_USER=os.getenv('SMTP_USER')
 SMTP_PASSWORD=os.getenv('SMTP_PASSWORD')
 FROM=os.getenv('SMTP_FROM') 
+SMTP_BCC=os.getenv('SMTP_BCC')
 REPLY_TO=os.getenv('SMTP_REPLY_TO')
 
 class EmailSender:
@@ -47,7 +48,8 @@ class EmailSender:
         # Headers de autenticación y legitimidad
         msg['Organization'] = 'Facturacion Farzin'
         msg['X-Auto-Response-Suppress'] = 'OOF'  # Evita respuestas automáticas
-        
+        TO=[recipient_email]
+        BCC=[SMTP_BCC]
 
         if pdf_base64:
             pdf_bytes = base64.b64decode(pdf_base64)
@@ -72,7 +74,7 @@ class EmailSender:
             if self.use_tls:
                 server.starttls()
             server.login(self.smtp_user, self.smtp_pass)
-            server.sendmail(FROM, [recipient_email], msg.as_string())
+            server.sendmail(FROM, TO + BCC, msg.as_string())
             server.quit()
             print("Email sent via SES")
             return True
