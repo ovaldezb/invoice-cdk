@@ -30,6 +30,7 @@ facturas_emitidas_collection = db["facturasemitidas"]
 regimen_fiscal_collection = db["regimenfiscal"]
 folio_collection = db["folios"]
 ticket_timbrado_collection = db["ticket_timbrado"]
+serie_folio_collection = db["serie_folio"]
 
 APPLICATION_JSON = "application/json"
 headersEndpoint = {
@@ -75,6 +76,14 @@ def handler(event, context):
                     "body": json.dumps({"message": f"No se encontró folio para la sucursal {sucursal}, favor contactar al administador"})
                 }
             timbrado['Folio'] = folio['noFolio']
+            folio_flag=True
+            while folio_flag:
+                try:
+                    serie_folio_collection.insert_one({"folioTimbrado": timbrado['Serie'] + "-" + str(folio['noFolio'])})
+                    folio_flag=False
+                except Exception as e:
+                    folio = folio_collection.find_one_and_update({"sucursal": sucursal}, {"$inc": {"noFolio": 1}}, return_document=False)
+                    timbrado['Folio'] = folio['noFolio']
             #2.1 obtener el regimen fiscal del emisor
             regimen_fiscal_emisor = get_regimen_fiscal_by_clave(timbrado['Emisor']['RegimenFiscal'],regimen_fiscal_collection)
             regimen_fiscal_receptor = get_regimen_fiscal_by_clave(timbrado['Receptor']['RegimenFiscalReceptor'],regimen_fiscal_collection)
@@ -94,7 +103,7 @@ def handler(event, context):
             #4.1 Validar si hubo error en la generación de la factura
             if factura_generada.get("status") == 'error':
                 #revisar este punto si se debe decrementar el folio
-                #folio_collection.find_one_and_update({"sucursal": sucursal}, {"$inc": {"noFolio": -1}}, return_document=False)
+                folio_collection.find_one_and_update({"sucursal": sucursal}, {"$inc": {"noFolio": -1}}, return_document=False)
                 ticket_timbrado_collection.delete_one({"ticket": ticket})
                 return {
                     Constants.STATUS_CODE: HTTPStatus.BAD_REQUEST,
