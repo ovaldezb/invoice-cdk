@@ -79,7 +79,7 @@ def handler(event, context):
             folio_flag=True
             while folio_flag:
                 try:
-                    serie_folio_collection.insert_one({"folioTimbrado": timbrado['Serie'] + "-" + str(folio['noFolio'])})
+                    serie_folio_collection.insert_one({"folioTimbrado": timbrado['Serie'] + str(folio['noFolio'])})
                     folio_flag=False
                 except Exception as e:
                     folio = folio_collection.find_one_and_update({"sucursal": sucursal}, {"$inc": {"noFolio": 1}}, return_document=False)
@@ -103,8 +103,10 @@ def handler(event, context):
             #4.1 Validar si hubo error en la generación de la factura
             if factura_generada.get("status") == 'error':
                 #revisar este punto si se debe decrementar el folio
+                serie_folio_collection.delete_one({"folioTimbrado": timbrado['Serie'] + str(folio['noFolio'])})
                 folio_collection.find_one_and_update({"sucursal": sucursal}, {"$inc": {"noFolio": -1}}, return_document=False)
                 ticket_timbrado_collection.delete_one({"ticket": ticket})
+                
                 return {
                     Constants.STATUS_CODE: HTTPStatus.BAD_REQUEST,
                     Constants.HEADERS_KEY: headers,
