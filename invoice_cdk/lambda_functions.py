@@ -115,7 +115,7 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env,
-            timeout=Duration.seconds(10),  # Optional: Set a timeout for the Lambda function
+            timeout=Duration.seconds(35),  # Optional: Set a timeout for the Lambda function
             current_version_options=lambda_.VersionOptions(
                 removal_policy=RemovalPolicy.RETAIN
             )
@@ -137,7 +137,7 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env,
-            timeout=Duration.seconds(10),  # Optional: Set a timeout for the Lambda function
+            timeout=Duration.seconds(35),  # Optional: Set a timeout for the Lambda function
             current_version_options=lambda_.VersionOptions(
                 removal_policy=RemovalPolicy.RETAIN
             )
@@ -159,7 +159,7 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env,
-            timeout=Duration.seconds(10),  # Optional: Set a timeout for the Lambda function
+            timeout=Duration.seconds(35),  # Optional: Set a timeout for the Lambda function
             current_version_options=lambda_.VersionOptions(
                 removal_policy=RemovalPolicy.RETAIN
             )
@@ -180,7 +180,7 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env_tapetes,
-            timeout=Duration.seconds(10),  # Optional: Set a timeout for the Lambda function
+            timeout=Duration.seconds(35),  # Optional: Set a timeout for the Lambda function
             current_version_options=lambda_.VersionOptions(
                 removal_policy=RemovalPolicy.RETAIN
             )
@@ -201,7 +201,7 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],  # Add the layer to the Lambda function
             environment=env,
-            timeout=Duration.seconds(10),  # Optional: Set a timeout for the Lambda function
+            timeout=Duration.seconds(35),  # Optional: Set a timeout for the Lambda function
             current_version_options=lambda_.VersionOptions(
                 removal_policy=RemovalPolicy.RETAIN
             )
@@ -222,7 +222,7 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,
-            timeout=Duration.seconds(10),
+            timeout=Duration.seconds(35),
             current_version_options=lambda_.VersionOptions(
                 removal_policy=RemovalPolicy.RETAIN
             )
@@ -243,7 +243,7 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,
-            timeout=Duration.seconds(10),
+            timeout=Duration.seconds(35),
             current_version_options=lambda_.VersionOptions(
                 removal_policy=RemovalPolicy.RETAIN
             )
@@ -264,7 +264,7 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,
-            timeout=Duration.seconds(10),
+            timeout=Duration.seconds(35),
             current_version_options=lambda_.VersionOptions(
                 removal_policy=RemovalPolicy.RETAIN
             )
@@ -285,7 +285,7 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,
-            timeout=Duration.seconds(10),
+            timeout=Duration.seconds(35),
             current_version_options=lambda_.VersionOptions(
                 removal_policy=RemovalPolicy.RETAIN
             )
@@ -327,7 +327,7 @@ class LambdaFunctions(Construct):
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,
-            timeout=Duration.seconds(10),
+            timeout=Duration.seconds(35),
             current_version_options=lambda_.VersionOptions(
                 removal_policy=RemovalPolicy.RETAIN
             )
