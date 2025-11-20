@@ -26,6 +26,7 @@ class CertificateApiGateway(Construct):
         self.alias_timbres_consumo = alias.get("timbres_consumo_alias")
         self.alias_parsea_pdf_regimen = alias.get("parsea_pdf_regimen_alias")
         self.alias_environment_handler = alias.get("environment_handler_alias")
+        self.alias_bitacora = alias.get("bitacora_alias")
 
         server = os.getenv("CORS_OPTION")
         print("CORS OPTION:", server)
@@ -111,6 +112,9 @@ class CertificateApiGateway(Construct):
         # Environment resource
         environment_resource = api.root.add_resource("environment")
 
+        # Bitacora resource
+        bitacora_resource = api.root.add_resource("bitacora")
+
         # Integrations
         certificate_integration = apigw.LambdaIntegration(
             self.alias_certificate,
@@ -166,6 +170,10 @@ class CertificateApiGateway(Construct):
             self.alias_environment_handler,
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
+        bitacora_integration = apigw.LambdaIntegration(
+            self.alias_bitacora,
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
+        )
 
         # Certificate methods (CON CUSTOM AUTHORIZER)
         certificates_resource.add_method("POST", certificate_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
@@ -214,3 +222,6 @@ class CertificateApiGateway(Construct):
 
         # Environment methods
         environment_resource.add_method("GET", environment_integration)
+
+        # Bitacora methods
+        bitacora_resource.add_method("GET", bitacora_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)

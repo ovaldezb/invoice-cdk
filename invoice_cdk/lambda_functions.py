@@ -17,6 +17,7 @@ class LambdaFunctions(Construct):
     timbres_consumo_lambda: lambda_.Function
     parsea_pdf_regimen_lambda: lambda_.Function
     environment_handler_lambda: lambda_.Function
+    bitacora_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -94,6 +95,7 @@ class LambdaFunctions(Construct):
         self.create_timbres_consumo_lambda(env, pymongo_layer)
         self.create_parsea_pdf_regimen_lambda(env_cors,pymongo_layer)
         self.create_environment_handler_lambda(env_cors,pymongo_layer)
+        self.create_bitacora_lambda(env, pymongo_layer)
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -336,4 +338,25 @@ class LambdaFunctions(Construct):
             self, "EnvironmentHandlerLambdaAlias",
             alias_name="Prod",
             version=self.environment_handler_lambda.current_version
+        )
+
+    def create_bitacora_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.bitacora_lambda = lambda_.Function(
+            self, "BitacoraLambda",
+            function_name="bitacora-lambda-invoice",
+            description="Lambda function to handle bitacora operations",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="consulta_bitacora_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(35),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.bitacora_alias = lambda_.Alias(
+            self, "BitacoraLambdaAlias",
+            alias_name="Prod",
+            version=self.bitacora_lambda.current_version
         )
