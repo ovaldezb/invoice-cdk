@@ -1,7 +1,7 @@
 import os
 import json
 from constantes import Constants
-from receptor_handler import valida_cors
+from utils import valida_cors
 from pymongo import MongoClient
 from dbaccess.db_timbres import (consulta_facturas_emitidas_by_certificado)
 from dbaccess.db_certificado import (list_certificates)
@@ -20,7 +20,6 @@ def lambda_handler(event, context):
         path_parameters = event.get("pathParameters")
         origin = event.get("headers", {}).get("origin")
         headers["Access-Control-Allow-Origin"] = valida_cors(origin)
-        print(headers)
         if http_method == Constants.GET:
             usuario = path_parameters.get("usuario")
             if usuario:

@@ -51,7 +51,7 @@ def handler(event, context):
                 data=json.dumps({"ticket": ticket})
             )
             venta_respuesta = venta.json()
-            
+            print(f'Venta: {venta_respuesta}')
             if 'detail' in venta_respuesta:
                 return {
                     Constants.STATUS_CODE: 404,
@@ -73,13 +73,14 @@ def handler(event, context):
                 item['unidad'] = descripcion
             id_certificado = sucursal_data.get("id_certificado")
             certificado = get_certificate_by_id(id_certificado, certificado_collection)
+            print(f'Certificado: {certificado}')
             if not certificado:
                 return {
                     Constants.STATUS_CODE: HTTPStatus.NOT_FOUND,
                     Constants.HEADERS_KEY: headers,
                     Constants.BODY: json.dumps({"message": "Certificado no encontrado, consúltalo con el Administrador"})
                 }
-            certificado["_id"] = str(certificado["_id"])
+            #certificado["_id"] = str(certificado["_id"])
             sucursal_data["_id"] = str(sucursal_data["_id"])
             return {
                 Constants.STATUS_CODE: 200,

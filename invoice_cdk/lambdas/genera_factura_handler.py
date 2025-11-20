@@ -12,7 +12,7 @@ from dbaccess.db_datos_factura import (get_regimen_fiscal_by_clave)
 from dbaccess.db_factura import (guarda_factura_emitida, get_factura_by_ticket)
 from models.factura_emitida import FacturaEmitida
 from email_sender import EmailSender
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 SW_USER_NAME = os.getenv("SW_USER_NAME")
 SW_USER_PASSWORD = os.getenv("SW_USER_PASSWORD")
@@ -31,6 +31,7 @@ regimen_fiscal_collection = db["regimenfiscal"]
 folio_collection = db["folios"]
 ticket_timbrado_collection = db["ticket_timbrado"]
 serie_folio_collection = db["serie_folio"]
+bitacora_collection = db["bitacora"]
 
 APPLICATION_JSON = "application/json"
 headersEndpoint = {
@@ -54,13 +55,14 @@ def handler(event, context):
         email_receptor = body['email']
         direccion = body['direccion']
         empresa = body['empresa']
-        #print(f"Timbrado: {timbrado}")
+        #buscar el ID del usuario que viene en el CSD, para despues asignarlo en la bitacora
         if http_method == Constants.POST:
             #Estos son los pasos para generar la factura
             #0 revisar si ya existe la factura para el ticket
             try:
-                ticket_timbrado_collection.insert_one({"ticket": ticket, "fechaTimbrado": datetime.now(timezone.utc).isoformat()})
+                ticket_timbrado_collection.insert_one({"ticket": ticket.replace("-", ""), "fechaTimbrado": datetime.now(timezone.utc).isoformat()})
             except Exception as e:
+                bitacora_collection.insert_one({"ticket": ticket, "rfc": timbrado['Receptor']['Rfc'], "rfcEmisor": timbrado['Emisor']['Rfc'], "email": email_receptor, "mensaje": "ya existe una solicitud de timbrado para el ticket", "status": "error", "traceback": traceback.format_exc(), "timestamp": (datetime.now(timezone.utc)- timedelta(hours=6)).isoformat()})
                 return {
                     "statusCode": 500,
                     "headers": headers,
@@ -106,7 +108,7 @@ def handler(event, context):
                 serie_folio_collection.delete_one({"folioTimbrado": timbrado['Serie'] + str(folio['noFolio'])})
                 folio_collection.find_one_and_update({"sucursal": sucursal}, {"$inc": {"noFolio": -1}}, return_document=False)
                 ticket_timbrado_collection.delete_one({"ticket": ticket})
-                
+                bitacora_collection.insert_one({"ticket": ticket, "rfc": timbrado['Receptor']['Rfc'], "rfcEmisor": timbrado['Emisor']['Rfc'], "email": email_receptor, "mensaje": "Nombre:" + timbrado['Receptor']['Nombre'] + " CP:" + timbrado['Receptor']['DomicilioFiscalReceptor'] + " Reg Fis:"+regimen_fiscal_receptor + " Uso CFDI:" +timbrado['Receptor']['UsoCFDI'] + " " + factura_generada.get("message"),"status": "error", "traceback": '', "timestamp": (datetime.now(timezone.utc)- timedelta(hours=6)).isoformat()})
                 return {
                     Constants.STATUS_CODE: HTTPStatus.BAD_REQUEST,
                     Constants.HEADERS_KEY: headers,
@@ -185,6 +187,7 @@ def handler(event, context):
                 )
                 print(f"Email sent: {result}")
             #9. Retornar la factura generada a la página
+            bitacora_collection.insert_one({"ticket": ticket, "rfc": timbrado['Receptor']['Rfc'], "rfcEmisor": timbrado['Emisor']['Rfc'], "email": email_receptor, "mensaje": "Factura generada exitosamente" + " Serie:"+ timbrado['Serie']+ " folio:" + str(timbrado['Folio']),"status": "exito", "traceback": '', "timestamp": (datetime.now(timezone.utc)- timedelta(hours=6)).isoformat()})
             return {
                 Constants.STATUS_CODE: HTTPStatus.OK,
                 Constants.HEADERS_KEY: headers,
@@ -217,6 +220,7 @@ def handler(event, context):
     except Exception as e:
         print(f"Error: {str(e)}")
         traceback.print_exc()
+        bitacora_collection.insert_one({"ticket": ticket, "rfc": timbrado['Receptor']['Rfc'], "rfcEmisor": timbrado['Emisor']['Rfc'],  "email": email_receptor, "mensaje": f"Error: {str(e)}","status": "error", "traceback": traceback.format_exc(), "timestamp": (datetime.now(timezone.utc)- timedelta(hours=6)).isoformat()})
         return {
             Constants.STATUS_CODE: HTTPStatus.INTERNAL_SERVER_ERROR,
             Constants.HEADERS_KEY: headers,

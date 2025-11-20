@@ -8,7 +8,7 @@ import re
 from bson import json_util
 from constantes import Constants
 from utils import valida_cors
-from models.certificate import Certificado
+from models.certificate import Certificado, CertificadoUpdate
 from requests_toolbelt.multipart import decoder
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -94,7 +94,7 @@ def handler(event, context):
                     Constants.BODY: json.dumps({"error": "Faltan Parametros obligatorios"}),
                     Constants.HEADERS_KEY: headers
                 }
-            
+            print("Cargando certificado...")
             cert = x509.load_der_x509_certificate(cer_bytes, default_backend())
             serial_number = cert.serial_number
             serial_bytes = serial_number.to_bytes((serial_number.bit_length() + 7) // 8, byteorder='big')
@@ -121,14 +121,14 @@ def handler(event, context):
                 "b64Key": b64_key,
                 "password": ctrsn
             }
-        
+            print("cert_body prepared:", cert_body)
             sw_token = requests.post(
                     f"{SW_URL}/v2/security/authenticate",
                     headers={"Content-Type": Constants.APPLICATION_JSON},
                     data=json.dumps({"user": SW_USER_NAME, "password": SW_USER_PASSWORD})
                 ).json()
         
-            requests.post(
+            response = requests.post(
                 f"{SW_URL}/certificates/save",
                 headers={
                     "Content-Type": "application/json",
@@ -136,7 +136,13 @@ def handler(event, context):
                 },
                 data=json.dumps(cert_body)
             ).json()
-
+            print("Certificate saved in SW Sapien",response)
+            if response.get("messageDetail") :
+                return {
+                    Constants.STATUS_CODE: HTTPStatus.BAD_REQUEST,
+                    Constants.BODY: json.dumps({"message": response.get("messageDetail")}),
+                    Constants.HEADERS_KEY: headers
+                }
             certificado = Certificado(
                 nombre=nombre,
                 rfc=rfc,
@@ -232,7 +238,7 @@ def handler(event, context):
                 }
             ).json()
             #Guardo el nuevo certificado en SW Sapien
-            requests.post(
+            response = requests.post(
                 f"{SW_URL}/certificates/save",
                 headers={
                     "Content-Type": "application/json",
@@ -240,16 +246,25 @@ def handler(event, context):
                 },
                 data=json.dumps(cert_body)
             ).json()
-
+            print("Certificate updated in SW Sapien",response)
+            if response.get("messageDetail") :
+                return {
+                    Constants.STATUS_CODE: HTTPStatus.BAD_REQUEST,
+                    Constants.BODY: json.dumps({"message": response.get("messageDetail")}),
+                    Constants.HEADERS_KEY: headers
+                }
             #actualizar la base de datos con los datos del nuevo certificado
-            data={
-                "desde": not_before,
-                "hasta": not_after,
-                "no_certificado": serial_str,
-
-            }
+            data = CertificadoUpdate(
+                #nombre=certificado["nombre"],
+                #rfc=certificado["rfc"],
+                no_certificado=serial_str,
+                desde=not_before,
+                hasta=not_after,
+                #sucursales=certificado["sucursales"],
+                #usuario=certificado["usuario"]
+            )
             
-            update_certificate(id_cert, data, certificates_collection)
+            update_certificate(id_cert, data.dict(exclude_none=True), certificates_collection)
             return {
                 Constants.STATUS_CODE: HTTPStatus.OK,
                 Constants.BODY: json.dumps({"message": "Certificado actualizado correctamente"}),
