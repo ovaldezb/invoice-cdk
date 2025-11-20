@@ -107,7 +107,7 @@ def handler(event, context):
                 #revisar este punto si se debe decrementar el folio
                 serie_folio_collection.delete_one({"folioTimbrado": timbrado['Serie'] + str(folio['noFolio'])})
                 folio_collection.find_one_and_update({"sucursal": sucursal}, {"$inc": {"noFolio": -1}}, return_document=False)
-                ticket_timbrado_collection.delete_one({"ticket": ticket})
+                ticket_timbrado_collection.delete_one({"ticket": ticket.replace("-", "")})
                 bitacora_collection.insert_one({"ticket": ticket, "rfc": timbrado['Receptor']['Rfc'], "rfcEmisor": timbrado['Emisor']['Rfc'], "email": email_receptor, "mensaje": "Nombre:" + timbrado['Receptor']['Nombre'] + " CP:" + timbrado['Receptor']['DomicilioFiscalReceptor'] + " Reg Fis:"+regimen_fiscal_receptor + " Uso CFDI:" +timbrado['Receptor']['UsoCFDI'] + " " + factura_generada.get("message"),"status": "error", "traceback": '', "timestamp": (datetime.now(timezone.utc)- timedelta(hours=6)).isoformat()})
                 return {
                     Constants.STATUS_CODE: HTTPStatus.BAD_REQUEST,
