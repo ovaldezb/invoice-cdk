@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 # Load environment variables BEFORE any other imports
-env_file = Path(__file__).parent.parent.parent / '.env_dev'
+env_file = Path(__file__).parent.parent.parent / '.env_test'
 if env_file.exists():
     with open(env_file) as f:
         for line in f:
@@ -17,7 +17,7 @@ if env_file.exists():
                 if key not in os.environ:
                     os.environ[key] = value.strip('"').strip("'")
 else:
-    raise FileNotFoundError(f"Required .env_dev file not found at {env_file}")
+    raise FileNotFoundError(f"Required .env_test file not found at {env_file}")
 
 # Now we can safely import modules that depend on environment variables
 import pytest

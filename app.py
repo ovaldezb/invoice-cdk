@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 import os
+import warnings
+
+# Suprimir warnings de typeguard relacionados con protocolos de AWS CDK
+warnings.filterwarnings('ignore', message='.*runtime_checkable.*')
+warnings.filterwarnings('ignore', category=UserWarning, module='.*aws_cdk.*')
 
 import aws_cdk as cdk
 

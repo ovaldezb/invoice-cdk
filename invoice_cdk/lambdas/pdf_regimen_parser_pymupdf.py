@@ -33,12 +33,12 @@ class RegimenFiscalPyMuPDFParser:
         if fitz is None:
             raise RuntimeError("PyMuPDF (fitz) no está disponible. Instala PyMuPDF.")
         txt = []
-        print(f"Extrayendo texto del PDF en: {path}")
+        #print(f"Extrayendo texto del PDF en: {path}")
         with fitz.open(path) as doc:
-            print(f"Abriendo PDF: {path}")
-            print(f"Cantidad de páginas: {doc.page_count}")
+            #print(f"Abriendo PDF: {path}")
+            #print(f"Cantidad de páginas: {doc.page_count}")
             for page in doc:
-                print(f"texto {page.get_text("words")}")
+                #print(f"texto {page.get_text("words")}")
                 # "text" mode devuelve texto con saltos de línea razonables
                 txt.append(page.get_text("text"))
         return "\n".join(txt)

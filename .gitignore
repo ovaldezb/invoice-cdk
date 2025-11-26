@@ -26,6 +26,7 @@ mongo_*.sh
 # Environment files
 .env
 .env_dev
+.env_test
 .env_prod
 .env.local
 

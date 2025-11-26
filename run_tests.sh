@@ -14,14 +14,14 @@ echo -e "${YELLOW}=====================================${NC}"
 echo -e "${YELLOW}  Running Tests${NC}"
 echo -e "${YELLOW}=====================================${NC}\n"
 
-# Load environment variables from .env_dev file for testing
-if [ -f .env_dev ]; then
-    echo -e "${GREEN}Loading environment variables from .env_dev file...${NC}"
-    export $(grep -v '^#' .env_dev | xargs)
+# Load environment variables from .env_test file for testing
+if [ -f .env_test ]; then
+    echo -e "${GREEN}Loading environment variables from .env_test file...${NC}"
+    export $(grep -v '^#' .env_test | xargs)
     echo -e "${GREEN}Environment variables loaded successfully${NC}\n"
 else
-    echo -e "${RED}Error: .env_dev file not found!${NC}"
-    echo -e "${YELLOW}Please create a .env_dev file with your test environment variables${NC}\n"
+    echo -e "${RED}Error: .env_test file not found!${NC}"
+    echo -e "${YELLOW}Please create a .env_test file with your test environment variables${NC}\n"
     exit 1
 fi
 
@@ -103,25 +103,10 @@ esac
 # Generate final coverage reports
 if [ $TEST_RESULT -eq 0 ]; then
     echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${BLUE}  Generating Coverage Reports${NC}"
+    echo -e "${BLUE}  All Tests Completed${NC}"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
     
-    $PYTEST_CMD --cov=invoice_cdk/lambdas/sucursal_handler \
-        --cov-report=html \
-        --cov-report=xml \
-        --cache-clear \
-        tests/ > /dev/null 2>&1
-    
     echo -e "${GREEN}✓ All tests passed!${NC}"
-    echo -e "\n${GREEN}Coverage report generated:${NC}"
-    echo -e "  HTML: ${YELLOW}htmlcov/index.html${NC}"
-    echo -e "  XML:  ${YELLOW}coverage.xml${NC}"
-    
-    # Open HTML coverage report (macOS)
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo -e "\n${GREEN}Opening coverage report in browser...${NC}"
-        open htmlcov/index.html
-    fi
 else
     echo -e "\n${RED}✗ Tests failed!${NC}"
     

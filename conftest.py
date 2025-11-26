@@ -15,10 +15,10 @@ for path in [project_root, lambdas_path, requirements_path]:
         sys.path.insert(0, path_str)
 
 
-# Load .env_dev file before running tests
+# Load .env_test file before running tests
 def pytest_configure(config):
-    """Load environment variables from .env_dev file for testing"""
-    env_file = Path(__file__).parent / '.env_dev'
+    """Load environment variables from .env_test file for testing"""
+    env_file = Path(__file__).parent / '.env_test'
     if env_file.exists():
         print(f"\n🔧 Loading test environment variables from {env_file}")
         with open(env_file) as f:
@@ -29,8 +29,8 @@ def pytest_configure(config):
                     os.environ[key] = value.strip('"').strip("'")
         print("✅ Test environment variables loaded successfully\n")
     else:
-        print(f"\n⚠️  Warning: .env_dev file not found at {env_file}")
-        print("Please create a .env_dev file with your test environment variables\n")
+        print(f"\n⚠️  Warning: .env_test file not found at {env_file}")
+        print("Please create a .env_test file with your test environment variables\n")
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -51,12 +51,20 @@ def setup_mocks():
     mock_constants_module = type(sys)('constantes')
     mock_constants_module.Constants = mock_constants_class
     
-    # Mock modules that sucursal_handler depends on
+    # Mock modules that handlers depend on
     sys.modules['constantes'] = mock_constants_module
-    sys.modules['receptor_handler'] = MagicMock()
+    # Note: We DON'T mock receptor_handler itself, only the utils it uses
     sys.modules['dbaccess.db_sucursal'] = MagicMock()
     sys.modules['dbaccess.db_certificado'] = MagicMock()
+    sys.modules['dbaccess.db_receptor'] = MagicMock()
+    sys.modules['dbaccess.db_datos_factura'] = MagicMock()
     sys.modules['models.sucursal'] = MagicMock()
+    sys.modules['models.receptor'] = MagicMock()
+    
+    # Mock utils module (contains valida_cors)
+    mock_utils = MagicMock()
+    mock_utils.valida_cors = MagicMock(return_value="http://localhost:3000")
+    sys.modules['utils'] = mock_utils
     
     # Setup MongoDB mocks
     mock_collection = MagicMock()

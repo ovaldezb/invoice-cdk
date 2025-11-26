@@ -80,7 +80,7 @@ def handler(event, context):
                     Constants.HEADERS_KEY: headers,
                     Constants.BODY: json.dumps({"message": "Certificado no encontrado, consúltalo con el Administrador"})
                 }
-            #certificado["_id"] = str(certificado["_id"])
+            
             sucursal_data["_id"] = str(sucursal_data["_id"])
             return {
                 Constants.STATUS_CODE: 200,
