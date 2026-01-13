@@ -42,8 +42,15 @@ def main():
     print(f"--- Validating Environment Variables ---")
     
     required_keys = get_required_keys(code_dir)
-    # Ignore internal AWS/CDK variables that might be in getenv
-    ignored_keys = {'CDK_DEFAULT_ACCOUNT', 'CDK_DEFAULT_REGION'}
+    # Ignore internal AWS/CDK variables and derived variables
+    # MONGODB_URI and DB_NAME are constructed in lambda_functions.py 
+    # from MONGO_USER, MONGO_PW, etc.
+    ignored_keys = {
+        'CDK_DEFAULT_ACCOUNT', 
+        'CDK_DEFAULT_REGION', 
+        'MONGODB_URI', 
+        'DB_NAME'
+    }
     required_keys = required_keys - ignored_keys
     
     provided_keys = get_env_keys(env_file)
