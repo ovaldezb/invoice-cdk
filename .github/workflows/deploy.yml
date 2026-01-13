@@ -37,6 +37,10 @@ jobs:
           # The run_tests.sh requires .env_test to exist
           cp .env.example .env_test || touch .env_test
           echo "TESTING=true" >> .env_test
+          echo "CORS=*" >> .env_test
+          echo "MONGODB_URI=mongodb://localhost:27017/test" >> .env_test
+          echo "DB_NAME=test" >> .env_test
+          echo "ENV=test" >> .env_test
 
       - name: Run Tests
         run: |
