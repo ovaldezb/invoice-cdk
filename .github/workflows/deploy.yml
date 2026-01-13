@@ -65,6 +65,8 @@ jobs:
     needs: test
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Development' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -96,7 +98,14 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ steps.set-env.outputs.region }}
+          aws-region: ${{ github.ref == 'refs/heads/main' && secrets.AWS_REGION_PROD || secrets.AWS_REGION_DEV }}
+
+      - name: Deployment Summary
+        run: |
+          echo "### 🚀 Deployment Info" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** ${{ steps.set-env.outputs.env }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region:** ${{ github.ref == 'refs/heads/main' && secrets.AWS_REGION_PROD || secrets.AWS_REGION_DEV }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
 
       - name: Create .env file
         run: |
@@ -113,9 +122,9 @@ jobs:
 
 
 
-      # - name: Deploy CDK
-      #   run: |
-      #     export ENVIRONMENT=${{ steps.set-env.outputs.env }}
-      #     # cdk deploy --all --require-approval never # Uncomment when ready
-      #     echo "Deploying to $ENVIRONMENT in ${{ steps.set-env.outputs.region }}"
+      - name: Deploy CDK
+        run: |
+          export ENVIRONMENT=${{ steps.set-env.outputs.env }}
+          cdk deploy --all --require-approval never
+          echo "Deploying to $ENVIRONMENT in ${{ steps.set-env.outputs.region }}"
 
