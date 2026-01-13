@@ -10,6 +10,12 @@ jobs:
   test:
     name: Test and Lint
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+
     steps:
       - uses: actions/checkout@v4
 
@@ -45,6 +51,11 @@ jobs:
       - name: Run Tests
         run: |
           chmod +x run_tests.sh
+          # Wait for MongoDB to be ready
+          until nc -z localhost 27017; do
+            echo "Waiting for MongoDB..."
+            sleep 1
+          done
           ./run_tests.sh all
         env:
           PYTHONPATH: .
