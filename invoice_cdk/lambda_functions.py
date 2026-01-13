@@ -26,7 +26,7 @@ class LambdaFunctions(Construct):
         env_vars = dotenv_values(".env")
         env = {
             "VERSION":env_vars.get("VERSION"),
-            "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
+            "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
             "DB_NAME": env_vars.get("MONGO_DB"),
             "CORS": env_vars.get("CORS"),
             "ENV": env_vars.get("ENV")
@@ -36,7 +36,7 @@ class LambdaFunctions(Construct):
             "ENV": env_vars.get("ENV")
         }
         env_tapetes = {
-            "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
+            "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
             "DB_NAME": env_vars.get("MONGO_DB"),
             "TAPETES_API_URL": env_vars.get("TAPETES_API_URL"),
             "TAPETES_USER_NAME": env_vars.get("TAPETES_USER_NAME"),
@@ -52,7 +52,7 @@ class LambdaFunctions(Construct):
             "TAPETES_API_URL": env_vars.get("TAPETES_API_URL"),
             "TAPETES_USER_NAME": env_vars.get("TAPETES_USER_NAME"),
             "TAPETES_PASSWORD": env_vars.get("TAPETES_PASSWORD"),
-            "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
+            "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
             "DB_NAME":       env_vars.get("MONGO_DB"),
             "SMTP_HOST":     env_vars.get("SMTP_HOST"),
             "SMTP_PORT":     env_vars.get("SMTP_PORT"),
@@ -70,7 +70,7 @@ class LambdaFunctions(Construct):
             "SW_USER_PASSWORD": env_vars.get("SW_USER_PASSWORD"),
             "SW_URL": env_vars.get("SW_URL"),
             "CORS": env_vars.get("CORS"),
-            "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
+            "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
             "DB_NAME": env_vars.get("MONGO_DB"),
             "ENV": env_vars.get("ENV")
         }
