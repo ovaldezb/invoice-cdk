@@ -83,14 +83,24 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ steps.set-env.outputs.region }}
 
+      - name: Create .env file
+        run: |
+          if [ "${{ steps.set-env.outputs.env }}" = "prod" ]; then
+            echo "${{ secrets.ENV_PROD_CONTENT }}" > .env
+          else
+            echo "${{ secrets.ENV_DEV_CONTENT }}" > .env
+          fi
+          # Ensure critical overrides are present
+          echo "ENV=${{ steps.set-env.outputs.env }}" >> .env
+
+      - name: Validate Envs
+        run: python scripts/ci/validate_envs.py
+
+
+
       # - name: Deploy CDK
       #   run: |
       #     export ENVIRONMENT=${{ steps.set-env.outputs.env }}
       #     # cdk deploy --all --require-approval never # Uncomment when ready
       #     echo "Deploying to $ENVIRONMENT in ${{ steps.set-env.outputs.region }}"
-      #   env:
-      #     # Inject any other environment variables needed by the CDK app from Secrets
-      #     MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        env:
-          # Inject any other environment variables needed by the CDK app from Secrets
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+
