@@ -43,8 +43,10 @@ def handler(event, context):
                 headers=headersEndpoint, 
                 data=form_data
             )
+            print('Token')
             token = response.json().get("access_token")
             ticket = path_parameters["ticket"]
+            print(f'Ticket: {ticket}')
             venta = requests.post(
                 f"{tapetes_api_url}tickets",
                 headers={"Accept": Constants.APPLICATION_JSON, "Content-Type": Constants.APPLICATION_JSON, "Authorization": f"Bearer {token}"},
