@@ -1,0 +1,58 @@
+{
+    "sucursal":"182",
+    "ticket":{
+        "noVenta":"12345",
+        "fecha":"2024-06-15T14:30:00",
+        "subtotal":1000.00,
+        "impuestos":160.00,
+        "total":1160.00,
+        "estado":1
+    },
+    "detalle":[
+        {
+            "claveproducto":"52101509",
+            "descripcio":"T-10846-U ANDINA 03 CAFE BEIGE 3.40X2.40",
+            "cantidad":2,
+            "precio":250.00,
+            "importe":500.00
+        },
+        {
+            "claveproducto":"52101509",
+            "descripcio":"T-11757-U MONIQUE 03 CAFE 2.90 X 2.00",
+            "cantidad":2,
+            "precio":250.00,
+            "importe":500.00
+        }
+    ],
+    "pago": {
+        "formapago": "04"
+    }
+}
+
+{
+    "sucursal": "386",
+    "ticket": {
+        "noVenta": "TAT9340-2027951",
+        "fecha": "2025-11-18T16: 34: 49",
+        "subtotal": 10646.55,
+        "impuesto": 1703.45,
+        "total": 12350.0,
+        "estado": 1,
+        "lock_owner": "",
+        "lock_until": "",
+        "ttl_seconds": ""
+    },
+    "detalle": [
+        {
+            "claveproducto": "52101509",
+            "descripcio": "F-11391-U LANAN 04 BEIGE 3.40 X 2.40",
+            "claveunidad": "H87",
+            "cantidad": 1.0,
+            "precio": 12350.0,
+            "importe": 12350.0
+        }
+    ],
+    "pago": {
+        "formapago": "04"
+    }
+}

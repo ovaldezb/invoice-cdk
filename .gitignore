@@ -22,3 +22,39 @@ run_test.sh
 *.png
 *.pdf
 mongo_*.sh
+
+# Environment files
+.env
+.env_dev
+.env_test
+.env_prod
+.env.local
+
+# Test coverage
+htmlcov/
+.coverage
+coverage.xml
+.pytest_cache/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+*.log

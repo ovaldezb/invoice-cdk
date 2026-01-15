@@ -93,7 +93,9 @@ def handler(event, context):
                     if sucursal_loop["_id"] != sucursal_id:
                         new_sucursales.append(sucursal_loop)
                 certificado_found["sucursales"] = new_sucursales
-                update_certificate(certificado_found["_id"], certificado_found, certificado_collection)
+                # Remove _id before updating to avoid "immutable field" error
+                cert_id = certificado_found.pop("_id")
+                update_certificate(cert_id, certificado_found, certificado_collection)
 
             folio_collection.delete_one({"sucursal": sucursal["codigo_sucursal"]})
             delete_sucursal(sucursal_id, sucursal_collection)

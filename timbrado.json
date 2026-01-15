@@ -1,0 +1,87 @@
+{
+    "Version": "4.0",
+    "Serie": "OSFI",
+    "Folio": "",
+    "Fecha": "2025-10-10T11:26:45",
+    "FormaPago": "04",
+    "CondicionesDePago": "Un solo pago",
+    "SubTotal": 24827.59,
+    "Descuento": 0,
+    "Moneda": "MXN",
+    "TipoCambio": 1,
+    "Total": 28800,
+    "TipoDeComprobante": "I",
+    "Exportacion": "01",
+    "MetodoPago": "PUE",
+    "LugarExpedicion": "05109",
+    "Emisor": {
+        "Rfc": "FAR0010318A1",
+        "Nombre": "FARZIN",
+        "RegimenFiscal": "601"
+    },
+    "Receptor": {
+        "Rfc": "EELD880811EJ6",
+        "Nombre": "DANIEL ESPEJEL LUNA",
+        "DomicilioFiscalReceptor": "01180",
+        "RegimenFiscalReceptor": "612",
+        "UsoCFDI": "G03"
+    },
+    "Conceptos": [
+        {
+            "Impuestos": {
+                "Traslados": [
+                    {
+                        "Base": 24137.93,
+                        "Impuesto": "002",
+                        "TipoFactor": "Tasa",
+                        "TasaOCuota": "0.160000",
+                        "Importe": 3862.07
+                    }
+                ]
+            },
+            "ClaveProdServ": "56101500",
+            "Cantidad": 1,
+            "ClaveUnidad": "H87",
+            "Unidad": "Pieza",
+            "Descripcion": "F-MUE-10010-U SALA MODULAR NAPOLES KF 8036 3.10 X 2.16",
+            "ValorUnitario": 24137.93,
+            "Importe": 24137.93,
+            "Descuento": 0,
+            "ObjetoImp": "02"
+        },
+        {
+            "Impuestos": {
+                "Traslados": [
+                    {
+                        "Base": 689.66,
+                        "Impuesto": "002",
+                        "TipoFactor": "Tasa",
+                        "TasaOCuota": "0.160000",
+                        "Importe": 110.34
+                    }
+                ]
+            },
+            "ClaveProdServ": "60111410",
+            "Cantidad": 2,
+            "ClaveUnidad": "H87",
+            "Unidad": "Pieza",
+            "Descripcion": "T-CJG-36 COJIN DALLAS PLATA 0.50 X 0.50",
+            "ValorUnitario": 344.83,
+            "Importe": 689.66,
+            "Descuento": 0,
+            "ObjetoImp": "02"
+        }
+    ],
+    "Impuestos": {
+        "Traslados": [
+            {
+                "Base": 24827.59,
+                "Impuesto": "002",
+                "TipoFactor": "Tasa",
+                "TasaOCuota": "0.160000",
+                "Importe": 3972.41
+            }
+        ],
+        "TotalImpuestosTrasladados": 3972.41
+    }
+}
