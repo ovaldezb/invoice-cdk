@@ -10,7 +10,11 @@ logger.setLevel(logging.INFO)
 def handler(event, context):
     logger.info("Event received: %s", json.dumps(event))
 
-    origin = event.get("headers", {}).get("origin")
+    logger.info("Event received: %s", json.dumps(event))
+
+    headers_incoming = event.get("headers", {})
+    origin = headers_incoming.get("origin") or headers_incoming.get("Origin")
+    
     headers = Constants.HEADERS.copy()
     headers["Access-Control-Allow-Origin"] = valida_cors(origin)
 
@@ -62,7 +66,18 @@ def handler(event, context):
             "auto_return": "approved"
         }
 
+        logger.info("Sending preference data: %s", json.dumps(preference_data))
+
         preference_response = sdk.preference().create(preference_data)
+        
+        if preference_response["status"] not in [200, 201]:
+            logger.error("MP Error: %s", json.dumps(preference_response))
+            return {
+                'statusCode': preference_response["status"],
+                'headers': headers,
+                'body': json.dumps(preference_response["response"])
+            }
+            
         preference = preference_response["response"]
 
         logger.info("Preference created: %s", json.dumps(preference))
