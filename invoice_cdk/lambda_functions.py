@@ -103,7 +103,6 @@ class LambdaFunctions(Construct):
         self.create_timbres_consumo_lambda(env, pymongo_layer)
         self.create_parsea_pdf_regimen_lambda(env_cors,pymongo_layer)
         self.create_environment_handler_lambda(env_cors,pymongo_layer)
-        self.create_environment_handler_lambda(env_cors,pymongo_layer)
         self.create_bitacora_lambda(env, pymongo_layer)
         self.create_mercado_pago_lambda(env_mercado_pago, pymongo_layer)
 
