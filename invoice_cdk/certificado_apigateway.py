@@ -27,6 +27,7 @@ class CertificateApiGateway(Construct):
         self.alias_parsea_pdf_regimen = alias.get("parsea_pdf_regimen_alias")
         self.alias_environment_handler = alias.get("environment_handler_alias")
         self.alias_bitacora = alias.get("bitacora_alias")
+        self.alias_mercado_pago = alias.get("mercado_pago_alias")
 
         server = os.getenv("CORS_OPTION")
         print("CORS OPTION:", server)
@@ -115,6 +116,10 @@ class CertificateApiGateway(Construct):
         # Bitacora resource
         bitacora_resource = api.root.add_resource("bitacora")
 
+        # Mercado Pago resource
+        mercado_pago_resource = api.root.add_resource("mercado-pago")
+        mp_create_preference_resource = mercado_pago_resource.add_resource("create-preference")
+
         # Integrations
         certificate_integration = apigw.LambdaIntegration(
             self.alias_certificate,
@@ -174,6 +179,11 @@ class CertificateApiGateway(Construct):
             self.alias_bitacora,
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
+        
+        mercado_pago_integration = apigw.LambdaIntegration(
+            self.alias_mercado_pago,
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
+        )
 
         # Certificate methods (CON CUSTOM AUTHORIZER)
         certificates_resource.add_method("POST", certificate_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
@@ -225,3 +235,6 @@ class CertificateApiGateway(Construct):
 
         # Bitacora methods
         bitacora_resource.add_method("GET", bitacora_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+
+        # Mercado Pago methods (protected)
+        mp_create_preference_resource.add_method("POST", mercado_pago_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)

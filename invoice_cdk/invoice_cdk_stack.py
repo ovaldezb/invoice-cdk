@@ -35,7 +35,8 @@ class InvoiceCdkStack(Stack):
             "timbres_consumo_alias": self.lambda_functions.timbres_consumo_alias,
             "parsea_pdf_regimen_alias": self.lambda_functions.parsea_pdf_regimen_alias,
             "environment_handler_alias": self.lambda_functions.environment_handler_alias,
-            "bitacora_alias": self.lambda_functions.bitacora_alias
+            "bitacora_alias": self.lambda_functions.bitacora_alias,
+            "mercado_pago_alias": self.lambda_functions.mercado_pago_alias
         }
         # Create API Gateway for the certificate lambda
         CertificateApiGateway(self, "CertificateApiGateway", alias, self.cognito_invoice.user_pool_cognito)

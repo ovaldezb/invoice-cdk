@@ -117,8 +117,10 @@ jobs:
         run: |
           if [ "${{ steps.set-env.outputs.env }}" = "prod" ]; then
             echo "${{ secrets.ENV_PROD_CONTENT }}" > .env
+            echo "MERCADO_PAGO_ACCESS_TOKEN=${{ secrets.MERCADO_PAGO_ACCESS_TOKEN_PROD }}" >> .env
           else
             echo "${{ secrets.ENV_DEV_CONTENT }}" > .env
+            echo "MERCADO_PAGO_ACCESS_TOKEN=${{ secrets.MERCADO_PAGO_ACCESS_TOKEN_DEV }}" >> .env
           fi
           # Ensure critical overrides are present
           echo "ENV=${{ steps.set-env.outputs.env }}" >> .env

@@ -17,7 +17,9 @@ class LambdaFunctions(Construct):
     timbres_consumo_lambda: lambda_.Function
     parsea_pdf_regimen_lambda: lambda_.Function
     environment_handler_lambda: lambda_.Function
+    environment_handler_lambda: lambda_.Function
     bitacora_lambda: lambda_.Function
+    mercado_pago_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -95,7 +97,9 @@ class LambdaFunctions(Construct):
         self.create_timbres_consumo_lambda(env, pymongo_layer)
         self.create_parsea_pdf_regimen_lambda(env_cors,pymongo_layer)
         self.create_environment_handler_lambda(env_cors,pymongo_layer)
+        self.create_environment_handler_lambda(env_cors,pymongo_layer)
         self.create_bitacora_lambda(env, pymongo_layer)
+        self.create_mercado_pago_lambda(env_mercado_pago, pymongo_layer)
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -359,4 +363,25 @@ class LambdaFunctions(Construct):
             self, "BitacoraLambdaAlias",
             alias_name="Prod",
             version=self.bitacora_lambda.current_version
+        )
+
+    def create_mercado_pago_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.mercado_pago_lambda = lambda_.Function(
+            self, "MercadoPagoLambda",
+            function_name="mercado-pago-lambda-invoice",
+            description="Lambda function to handle Mercado Pago operations",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="mercado_pago_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(30),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.mercado_pago_alias = lambda_.Alias(
+            self, "MercadoPagoLambdaAlias",
+            alias_name="Prod",
+            version=self.mercado_pago_lambda.current_version
         )
