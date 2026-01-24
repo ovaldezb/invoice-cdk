@@ -76,7 +76,7 @@ class LambdaFunctions(Construct):
             "DB_NAME": env_vars.get("MONGO_DB"),
             "ENV": env_vars.get("ENV")
         }
-        }
+        
 
         env_mercado_pago = {
             "MERCADO_PAGO_ACCESS_TOKEN": env_vars.get("MERCADO_PAGO_ACCESS_TOKEN"),
