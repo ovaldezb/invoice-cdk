@@ -2,19 +2,17 @@ import json
 import mercadopago
 import os
 import logging
-
-# Configurar logging
+from utils import valida_cors
+from constantes import Constants
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 def handler(event, context):
     logger.info("Event received: %s", json.dumps(event))
 
-    headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'OPTIONS,POST'
-    }
+    origin = event.get("headers", {}).get("origin")
+    headers = Constants.HEADERS.copy()
+    headers["Access-Control-Allow-Origin"] = valida_cors(origin)
 
     if event['httpMethod'] == 'OPTIONS':
         return {
@@ -57,9 +55,9 @@ def handler(event, context):
                 }
             ],
             "back_urls": {
-                "success": "http://localhost:4200/dashboard", # TODO: Cambiar por URL real en prod
-                "failure": "http://localhost:4200/dashboard",
-                "pending": "http://localhost:4200/dashboard"
+                "success": f"{origin}/dashboard" if origin else "http://localhost:4200/dashboard",
+                "failure": f"{origin}/dashboard" if origin else "http://localhost:4200/dashboard",
+                "pending": f"{origin}/dashboard" if origin else "http://localhost:4200/dashboard"
             },
             "auto_return": "approved"
         }
