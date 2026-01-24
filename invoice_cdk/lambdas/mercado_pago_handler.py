@@ -63,7 +63,7 @@ def handler(event, context):
                 "failure": f"{origin}/dashboard" if origin else "http://localhost:4200/dashboard",
                 "pending": f"{origin}/dashboard" if origin else "http://localhost:4200/dashboard"
             },
-            "auto_return": "approved"
+            # "auto_return": "approved"
         }
 
         logger.info("Sending preference data: %s", json.dumps(preference_data))
