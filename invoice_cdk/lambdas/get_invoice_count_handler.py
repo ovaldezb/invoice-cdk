@@ -5,6 +5,8 @@ from pymongo import MongoClient
 import logging
 from datetime import datetime, timedelta, timezone
 from bson.json_util import dumps
+from constantes import Constants
+from utils import valida_cors
 
 # Configurar logging
 logger = logging.getLogger()
@@ -15,16 +17,12 @@ client = MongoClient(os.environ['MONGODB_URI'])
 db = client[os.environ['DB_NAME']]
 certificates_collection = db['certificates']
 facturas_collection = db['facturasemitidas']
-
+headers = Constants.HEADERS.copy()
 def handler(event, context):
     logger.info("Get Invoice Count Event received: %s", json.dumps(event))
-
-    headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET,OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
-    }
-
+    origin = event.get('headers', {}).get('origin')
+    headers["Access-Control-Allow-Origin"] = valida_cors(origin)
+    
     if event['httpMethod'] == 'OPTIONS':
         return {'statusCode': 200, 'headers': headers, 'body': ''}
 
