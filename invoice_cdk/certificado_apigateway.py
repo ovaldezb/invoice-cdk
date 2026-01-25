@@ -31,6 +31,7 @@ class CertificateApiGateway(Construct):
         self.alias_mercado_pago_webhook = alias.get("mercado_pago_webhook_alias")
         self.alias_get_payments = alias.get("get_payments_alias")
         self.alias_payment_config = alias.get("payment_config_alias")
+        self.alias_get_invoice_count = alias.get("get_invoice_count_alias")
 
         server = os.getenv("CORS_OPTION")
         print("CORS OPTION:", server)
@@ -126,6 +127,10 @@ class CertificateApiGateway(Construct):
         mp_payments_resource = mercado_pago_resource.add_resource("payments")
         mp_config_resource = mercado_pago_resource.add_resource("configuration")
 
+        # Invoices resource
+        invoices_resource = api.root.add_resource("invoices")
+        invoice_count_resource = invoices_resource.add_resource("count")
+
         # Integrations
         certificate_integration = apigw.LambdaIntegration(
             self.alias_certificate,
@@ -206,6 +211,11 @@ class CertificateApiGateway(Construct):
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
+        get_invoice_count_integration = apigw.LambdaIntegration(
+            self.alias_get_invoice_count,
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
+        )
+
         # Certificate methods (CON CUSTOM AUTHORIZER)
         certificates_resource.add_method("POST", certificate_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
         certificates_resource.add_method("GET", certificate_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
@@ -270,3 +280,5 @@ class CertificateApiGateway(Construct):
         mp_config_resource.add_method("GET", payment_config_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
         mp_config_resource.add_method("POST", payment_config_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
         mp_config_resource.add_method("DELETE", payment_config_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+        # Invoice Count method (Protected)
+        invoice_count_resource.add_method("GET", get_invoice_count_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
