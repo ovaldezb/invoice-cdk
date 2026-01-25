@@ -20,6 +20,7 @@ class LambdaFunctions(Construct):
     environment_handler_lambda: lambda_.Function
     bitacora_lambda: lambda_.Function
     mercado_pago_lambda: lambda_.Function
+    mercado_pago_webhook_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -105,6 +106,7 @@ class LambdaFunctions(Construct):
         self.create_environment_handler_lambda(env_cors,pymongo_layer)
         self.create_bitacora_lambda(env, pymongo_layer)
         self.create_mercado_pago_lambda(env_mercado_pago, pymongo_layer)
+        self.create_mercado_pago_webhook_lambda(env_mercado_pago, pymongo_layer)
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -389,4 +391,25 @@ class LambdaFunctions(Construct):
             self, "MercadoPagoLambdaAlias",
             alias_name="Prod",
             version=self.mercado_pago_lambda.current_version
+        )
+
+    def create_mercado_pago_webhook_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.mercado_pago_webhook_lambda = lambda_.Function(
+            self, "MercadoPagoWebhookLambda",
+            function_name="mercado-pago-webhook-lambda-invoice",
+            description="Lambda function to handle Mercado Pago Webhooks",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="mercado_pago_webhook_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment={**env, "MONGODB_URI": os.environ.get("MONGODB_URI"), "DB_NAME": os.environ.get("DB_NAME")}, # Ensure Mongo Access
+            timeout=Duration.seconds(30),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.mercado_pago_webhook_alias = lambda_.Alias(
+            self, "MercadoPagoWebhookLambdaAlias",
+            alias_name="Prod",
+            version=self.mercado_pago_webhook_lambda.current_version
         )

@@ -63,6 +63,7 @@ def handler(event, context):
                 "failure": f"{origin}/dashboard" if origin else "http://localhost:4200/dashboard",
                 "pending": f"{origin}/dashboard" if origin else "http://localhost:4200/dashboard"
             },
+            "notification_url": "https://8gf95lar45.execute-api.us-east-1.amazonaws.com/prod/mercado-pago/webhook", # TODO: Parametrizar dominio
             # "auto_return": "approved",
             "binary_mode": True
         }
