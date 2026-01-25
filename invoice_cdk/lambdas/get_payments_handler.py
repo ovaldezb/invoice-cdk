@@ -4,8 +4,8 @@ import pymongo
 from pymongo import MongoClient
 import logging
 from bson.json_util import dumps
-from constantes import Constants
-from utils import valida_cors
+from utils.constants import Constants
+from utils.cors_utils import valida_cors
 
 # Configurar logging
 logger = logging.getLogger()
