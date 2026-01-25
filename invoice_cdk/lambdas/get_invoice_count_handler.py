@@ -15,9 +15,9 @@ logger.setLevel(logging.INFO)
 # Configurar MongoDB
 client = MongoClient(os.environ['MONGODB_URI'])
 db = client[os.environ['DB_NAME']]
-certificates_collection = db['certificates']
 facturas_collection = db['facturasemitidas']
 headers = Constants.HEADERS.copy()
+
 def handler(event, context):
     logger.info("Get Invoice Count Event received: %s", json.dumps(event))
     origin = event.get('headers', {}).get('origin')

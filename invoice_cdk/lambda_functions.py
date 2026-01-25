@@ -25,6 +25,7 @@ class LambdaFunctions(Construct):
     get_payments_lambda: lambda_.Function
     payment_config_lambda: lambda_.Function
     get_invoice_count_lambda: lambda_.Function
+    timbrado_service_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -122,6 +123,7 @@ class LambdaFunctions(Construct):
         self.create_get_payments_lambda(env_webhook, pymongo_layer) # Reusing env_webhook as it needs Mongo access
         self.create_payment_config_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
         self.create_get_invoice_count_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
+        self.create_timbrado_service_lambda(env_cert, pymongo_layer) # Reusing env_cert (has SW creds)
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -152,6 +154,27 @@ class LambdaFunctions(Construct):
             self, "GetInvoiceCountLambdaAlias",
             alias_name="Prod",
             version=self.get_invoice_count_lambda.current_version
+        )
+
+    def create_timbrado_service_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.timbrado_service_lambda = lambda_.Function(
+            self, "TimbradoServiceLambda",
+            function_name="timbrado-service-lambda-invoice",
+            description="Lambda function for service invoice stamping",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="timbrado_service_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer], # Optional if no mongo access needed, but harmless
+            environment=env, # Needs SW_* vars
+            timeout=Duration.seconds(35),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.timbrado_service_alias = lambda_.Alias(
+            self, "TimbradoServiceLambdaAlias",
+            alias_name="Prod",
+            version=self.timbrado_service_lambda.current_version
         )
 
     def create_certificate_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):

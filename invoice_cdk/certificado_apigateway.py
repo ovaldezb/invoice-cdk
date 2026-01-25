@@ -32,6 +32,7 @@ class CertificateApiGateway(Construct):
         self.alias_get_payments = alias.get("get_payments_alias")
         self.alias_payment_config = alias.get("payment_config_alias")
         self.alias_get_invoice_count = alias.get("get_invoice_count_alias")
+        self.alias_timbrado_service = alias.get("timbrado_service_alias")
 
         server = os.getenv("CORS_OPTION")
         print("CORS OPTION:", server)
@@ -282,3 +283,14 @@ class CertificateApiGateway(Construct):
         mp_config_resource.add_method("DELETE", payment_config_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
         # Invoice Count method (Protected)
         invoice_count_resource.add_method("GET", get_invoice_count_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+
+        # Timbrado Service resource
+        timbrado_service_resource = api.root.add_resource("timbrado-service")
+        
+        timbrado_service_integration = apigw.LambdaIntegration(
+            self.alias_timbrado_service,
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
+        )
+        
+        # Protected POST method
+        timbrado_service_resource.add_method("POST", timbrado_service_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
