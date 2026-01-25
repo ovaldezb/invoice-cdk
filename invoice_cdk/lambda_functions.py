@@ -84,6 +84,13 @@ class LambdaFunctions(Construct):
             "MERCADO_PAGO_ACCESS_TOKEN": env_vars.get("MERCADO_PAGO_ACCESS_TOKEN"),
             "CORS": env_vars.get("CORS"),
         }
+        
+        env_webhook = {
+            "MERCADO_PAGO_ACCESS_TOKEN": env_vars.get("MERCADO_PAGO_ACCESS_TOKEN"),
+            "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
+            "DB_NAME": env_vars.get("MONGO_DB"),
+            "CORS": env_vars.get("CORS"),
+        }
 
         pymongo_layer = lambda_.LayerVersion(
             self, "pymongo-layer",
@@ -107,7 +114,7 @@ class LambdaFunctions(Construct):
         self.create_environment_handler_lambda(env_cors,pymongo_layer)
         self.create_bitacora_lambda(env, pymongo_layer)
         self.create_mercado_pago_lambda(env_mercado_pago, pymongo_layer)
-        self.create_mercado_pago_webhook_lambda(env_mercado_pago, pymongo_layer)
+        self.create_mercado_pago_webhook_lambda(env_webhook, pymongo_layer)
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -403,7 +410,7 @@ class LambdaFunctions(Construct):
             handler="mercado_pago_webhook_handler.handler",
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
-            environment={**env, "MONGODB_URI": os.environ.get("MONGODB_URI"), "DB_NAME": os.environ.get("DB_NAME")}, # Ensure Mongo Access
+            environment=env,
             timeout=Duration.seconds(30),
             current_version_options=lambda_.VersionOptions(
                 removal_policy=RemovalPolicy.RETAIN
