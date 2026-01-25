@@ -1,6 +1,7 @@
 from aws_cdk import Duration, aws_lambda as lambda_, RemovalPolicy
 from constructs import Construct
 from dotenv import dotenv_values
+import os
 
 INVOICE_LAMBDAS_PATH = "invoice_cdk/lambdas"
 class LambdaFunctions(Construct):
