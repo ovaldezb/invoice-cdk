@@ -24,6 +24,7 @@ class LambdaFunctions(Construct):
     mercado_pago_webhook_lambda: lambda_.Function
     get_payments_lambda: lambda_.Function
     payment_config_lambda: lambda_.Function
+    get_invoice_count_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -120,6 +121,7 @@ class LambdaFunctions(Construct):
         self.create_mercado_pago_webhook_lambda(env_webhook, pymongo_layer)
         self.create_get_payments_lambda(env_webhook, pymongo_layer) # Reusing env_webhook as it needs Mongo access
         self.create_payment_config_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
+        self.create_get_invoice_count_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -129,6 +131,27 @@ class LambdaFunctions(Construct):
             handler="cognitoPostConf.handler",
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             environment=env
+        )
+
+    def create_get_invoice_count_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.get_invoice_count_lambda = lambda_.Function(
+            self, "GetInvoiceCountLambda",
+            function_name="get-invoice-count-lambda-invoice",
+            description="Lambda function to count invoices for billing",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="get_invoice_count_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(30),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.get_invoice_count_alias = lambda_.Alias(
+            self, "GetInvoiceCountLambdaAlias",
+            alias_name="Prod",
+            version=self.get_invoice_count_lambda.current_version
         )
 
     def create_certificate_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):

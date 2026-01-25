@@ -39,7 +39,8 @@ class InvoiceCdkStack(Stack):
             "mercado_pago_alias": self.lambda_functions.mercado_pago_alias,
             "mercado_pago_webhook_alias": self.lambda_functions.mercado_pago_webhook_alias,
             "get_payments_alias": self.lambda_functions.get_payments_alias,
-            "payment_config_alias": self.lambda_functions.payment_config_alias
+            "payment_config_alias": self.lambda_functions.payment_config_alias,
+            "get_invoice_count_alias": self.lambda_functions.get_invoice_count_alias
         }
         # Create API Gateway for the certificate lambda
         CertificateApiGateway(self, "CertificateApiGateway", alias, self.cognito_invoice.user_pool_cognito)
