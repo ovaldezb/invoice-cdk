@@ -29,6 +29,7 @@ class CertificateApiGateway(Construct):
         self.alias_bitacora = alias.get("bitacora_alias")
         self.alias_mercado_pago = alias.get("mercado_pago_alias")
         self.alias_mercado_pago_webhook = alias.get("mercado_pago_webhook_alias")
+        self.alias_get_payments = alias.get("get_payments_alias")
 
         server = os.getenv("CORS_OPTION")
         print("CORS OPTION:", server)
@@ -121,6 +122,7 @@ class CertificateApiGateway(Construct):
         mercado_pago_resource = api.root.add_resource("mercado-pago")
         mp_create_preference_resource = mercado_pago_resource.add_resource("create-preference")
         mp_webhook_resource = mercado_pago_resource.add_resource("webhook")
+        mp_payments_resource = mercado_pago_resource.add_resource("payments")
 
         # Integrations
         certificate_integration = apigw.LambdaIntegration(
@@ -189,6 +191,11 @@ class CertificateApiGateway(Construct):
 
         mercado_pago_webhook_integration = apigw.LambdaIntegration(
             self.alias_mercado_pago_webhook,
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
+        )
+
+        get_payments_integration = apigw.LambdaIntegration(
+            self.alias_get_payments,
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 

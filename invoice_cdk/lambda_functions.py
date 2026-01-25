@@ -22,6 +22,7 @@ class LambdaFunctions(Construct):
     bitacora_lambda: lambda_.Function
     mercado_pago_lambda: lambda_.Function
     mercado_pago_webhook_lambda: lambda_.Function
+    get_payments_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -116,6 +117,7 @@ class LambdaFunctions(Construct):
         self.create_bitacora_lambda(env, pymongo_layer)
         self.create_mercado_pago_lambda(env_mercado_pago, pymongo_layer)
         self.create_mercado_pago_webhook_lambda(env_webhook, pymongo_layer)
+        self.create_get_payments_lambda(env_webhook, pymongo_layer) # Reusing env_webhook as it needs Mongo access
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
