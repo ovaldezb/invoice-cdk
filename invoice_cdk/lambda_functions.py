@@ -424,3 +424,24 @@ class LambdaFunctions(Construct):
             alias_name="Prod",
             version=self.mercado_pago_webhook_lambda.current_version
         )
+
+    def create_get_payments_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.get_payments_lambda = lambda_.Function(
+            self, "GetPaymentsLambda",
+            function_name="get-payments-lambda-invoice",
+            description="Lambda function to fetch recent payments",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="get_payments_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(30),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.get_payments_alias = lambda_.Alias(
+            self, "GetPaymentsLambdaAlias",
+            alias_name="Prod",
+            version=self.get_payments_lambda.current_version
+        )
