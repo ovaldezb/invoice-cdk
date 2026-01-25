@@ -13,15 +13,12 @@ logger.setLevel(logging.INFO)
 client = MongoClient(os.environ['MONGODB_URI'])
 db = client[os.environ['DB_NAME']]
 payments_collection = db['payments']
+headers = Constants.HEADERS.copy()
 
 def handler(event, context):
-    logger.info("Get Payments Event received")
-
-    headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET,OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
-    }
+    logger.info("Get Payments Event received",event)
+    origin = event.get('headers', {}).get('origin')
+    headers["Access-Control-Allow-Origin"] = valida_cors(origin)
 
     if event['httpMethod'] == 'OPTIONS':
         return {'statusCode': 200, 'headers': headers, 'body': ''}
