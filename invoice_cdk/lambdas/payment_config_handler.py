@@ -5,6 +5,8 @@ from pymongo import MongoClient
 import logging
 from bson.json_util import dumps
 from bson.objectid import ObjectId
+from utils.constants import Constants
+from utils.cors_utils import valida_cors
 
 # Configurar logging
 logger = logging.getLogger()
@@ -14,16 +16,13 @@ logger.setLevel(logging.INFO)
 client = MongoClient(os.environ['MONGODB_URI'])
 db = client[os.environ['DB_NAME']]
 payment_config_collection = db['payment_configurations']
+headers = Constants.HEADERS.copy()
 
 def handler(event, context):
     logger.info("Payment Config Event received")
-
-    headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'
-    }
-
+    origin = event.get('headers', {}).get('origin')
+    headers["Access-Control-Allow-Origin"] = valida_cors(origin)
+    
     if event['httpMethod'] == 'OPTIONS':
         return {'statusCode': 200, 'headers': headers, 'body': ''}
 
