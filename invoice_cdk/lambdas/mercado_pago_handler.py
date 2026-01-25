@@ -15,6 +15,14 @@ def handler(event, context):
     headers_incoming = event.get("headers", {})
     origin = headers_incoming.get("origin") or headers_incoming.get("Origin")
     
+    # URL del Webhook desde variable de entorno
+    notification_url = os.environ.get("MP_WEBHOOK_URL")
+    
+    if not notification_url:
+        logger.warning("MP_WEBHOOK_URL not defined. Webhook will not work.")
+
+    logger.info(f"Using Notification URL: {notification_url}")
+
     headers = Constants.HEADERS.copy()
     headers["Access-Control-Allow-Origin"] = valida_cors(origin)
 
@@ -63,7 +71,7 @@ def handler(event, context):
                 "failure": f"{origin}/dashboard" if origin else "http://localhost:4200/dashboard",
                 "pending": f"{origin}/dashboard" if origin else "http://localhost:4200/dashboard"
             },
-            "notification_url": "https://8gf95lar45.execute-api.us-east-1.amazonaws.com/prod/mercado-pago/webhook", # TODO: Parametrizar dominio
+            "notification_url": notification_url, 
             # "auto_return": "approved",
             "binary_mode": True
         }

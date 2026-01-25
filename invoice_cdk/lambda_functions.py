@@ -82,6 +82,7 @@ class LambdaFunctions(Construct):
 
         env_mercado_pago = {
             "MERCADO_PAGO_ACCESS_TOKEN": env_vars.get("MERCADO_PAGO_ACCESS_TOKEN"),
+            "MP_WEBHOOK_URL": env_vars.get("MP_WEBHOOK_URL"),
             "CORS": env_vars.get("CORS"),
         }
         
