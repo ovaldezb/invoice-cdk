@@ -30,6 +30,7 @@ class CertificateApiGateway(Construct):
         self.alias_mercado_pago = alias.get("mercado_pago_alias")
         self.alias_mercado_pago_webhook = alias.get("mercado_pago_webhook_alias")
         self.alias_get_payments = alias.get("get_payments_alias")
+        self.alias_payment_config = alias.get("payment_config_alias")
 
         server = os.getenv("CORS_OPTION")
         print("CORS OPTION:", server)
@@ -123,6 +124,7 @@ class CertificateApiGateway(Construct):
         mp_create_preference_resource = mercado_pago_resource.add_resource("create-preference")
         mp_webhook_resource = mercado_pago_resource.add_resource("webhook")
         mp_payments_resource = mercado_pago_resource.add_resource("payments")
+        mp_config_resource = mercado_pago_resource.add_resource("configuration")
 
         # Integrations
         certificate_integration = apigw.LambdaIntegration(
@@ -199,6 +201,11 @@ class CertificateApiGateway(Construct):
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
+        payment_config_integration = apigw.LambdaIntegration(
+            self.alias_payment_config,
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
+        )
+
         # Certificate methods (CON CUSTOM AUTHORIZER)
         certificates_resource.add_method("POST", certificate_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
         certificates_resource.add_method("GET", certificate_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
@@ -255,3 +262,11 @@ class CertificateApiGateway(Construct):
         
         # Mercado Pago Webhook (PUBLIC)
         mp_webhook_resource.add_method("POST", mercado_pago_webhook_integration)
+
+        # Mercado Pago Payments (Protected)
+        mp_payments_resource.add_method("GET", get_payments_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+
+        # Mercado Pago Configuration (Protected)
+        mp_config_resource.add_method("GET", payment_config_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+        mp_config_resource.add_method("POST", payment_config_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+        mp_config_resource.add_method("DELETE", payment_config_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)

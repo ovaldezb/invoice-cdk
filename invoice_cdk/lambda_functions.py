@@ -23,6 +23,7 @@ class LambdaFunctions(Construct):
     mercado_pago_lambda: lambda_.Function
     mercado_pago_webhook_lambda: lambda_.Function
     get_payments_lambda: lambda_.Function
+    payment_config_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -118,6 +119,7 @@ class LambdaFunctions(Construct):
         self.create_mercado_pago_lambda(env_mercado_pago, pymongo_layer)
         self.create_mercado_pago_webhook_lambda(env_webhook, pymongo_layer)
         self.create_get_payments_lambda(env_webhook, pymongo_layer) # Reusing env_webhook as it needs Mongo access
+        self.create_payment_config_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -444,4 +446,25 @@ class LambdaFunctions(Construct):
             self, "GetPaymentsLambdaAlias",
             alias_name="Prod",
             version=self.get_payments_lambda.current_version
+        )
+
+    def create_payment_config_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.payment_config_lambda = lambda_.Function(
+            self, "PaymentConfigLambda",
+            function_name="payment-config-lambda-invoice",
+            description="Lambda function to handle payment configuration",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="payment_config_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(30),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.payment_config_alias = lambda_.Alias(
+            self, "PaymentConfigLambdaAlias",
+            alias_name="Prod",
+            version=self.payment_config_lambda.current_version
         )
