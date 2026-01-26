@@ -26,7 +26,7 @@ def handler(event, context):
 
         body = json.loads(event.get("body", "{}"))
         timbrado_payload = body.get('timbrado')
-
+        print(timbrado_payload)
         if not timbrado_payload:
             return {
                 "statusCode": HTTPStatus.BAD_REQUEST,
@@ -49,7 +49,7 @@ def handler(event, context):
             }
             
         token = auth_response.get("data", {}).get("token")
-
+        print(token)
         # 2. Issue Invoice (Timbrar)
         # Using v4 endpoint as seen in genera_factura_handler
         stamping_response = requests.post(
@@ -60,7 +60,7 @@ def handler(event, context):
             },
             data=json.dumps(timbrado_payload)
         ).json()
-
+        print(stamping_response)
         status_code = HTTPStatus.OK
         if stamping_response.get("status") == "error":
             status_code = HTTPStatus.BAD_REQUEST
