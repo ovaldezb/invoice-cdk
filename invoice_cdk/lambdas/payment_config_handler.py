@@ -27,18 +27,12 @@ def handler(event, context):
         return {'statusCode': 200, 'headers': headers, 'body': ''}
 
     try:
-        # Determine User ID (sub from Cognito token)
-        # This is CRITICAL for multi-tenancy. We assume authorization has passed and claims are available.
-        # In API Gateway + Cognito Authorizer, claims are in requestContext.authorizer.claims
-        user_id = "default_user" # Fallback
-        if 'requestContext' in event and 'authorizer' in event['requestContext'] and 'claims' in event['requestContext']['authorizer']:
-             user_id = event['requestContext']['authorizer']['claims']['sub']
+        # Use a global identifier for payment configuration instead of user_id
+        config_filter = {"config_id": "global"}
         
-        logger.info(f"Processing request for user: {user_id}")
-
         if event['httpMethod'] == 'GET':
-            # Fetch config for this user
-            config = payment_config_collection.find_one({"user_id": user_id})
+            # Fetch global config
+            config = payment_config_collection.find_one(config_filter)
             
             # Helper to return clean array
             payment_config = config.get('payment_config', []) if config else []
@@ -53,10 +47,10 @@ def handler(event, context):
             body = json.loads(event['body'])
             payment_config = body.get('payment_config', [])
             
-            # Update or Insert (Upsert)
+            # Update or Insert (Upsert) using the global config_id
             result = payment_config_collection.update_one(
-                {"user_id": user_id},
-                {"$set": {"payment_config": payment_config, "user_id": user_id}},
+                config_filter,
+                {"$set": {"payment_config": payment_config}},
                 upsert=True
             )
             
