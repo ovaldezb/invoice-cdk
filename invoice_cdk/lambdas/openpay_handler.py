@@ -10,7 +10,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 def handler(event, context):
-    logger.info("OpenPay Event received: %s", json.dumps(event))
+    logger.info("OpenPay Event received (Payload Fix): %s", json.dumps(event))
 
     headers_incoming = event.get("headers", {})
     origin = headers_incoming.get("origin") or headers_incoming.get("Origin")
@@ -32,10 +32,6 @@ def handler(event, context):
         production_mode_str = os.environ.get('OPENPAY_PRODUCTION_MODE', 'false').lower().strip()
         production_mode = production_mode_str == 'true'
 
-        # Debug logs (masked for security)
-        masked_key = f"{private_key[:7]}...{private_key[-4:]}" if len(private_key) > 11 else "***"
-        logger.info(f"OpenPay Config: MerchantID={merchant_id}, PrivateKey={masked_key}, ProductionMode={production_mode}")
-
         if not all([merchant_id, private_key]):
             logger.error("Missing OpenPay credentials in environment")
             return {
@@ -46,61 +42,63 @@ def handler(event, context):
 
         # Determinar base URL
         base_url = "https://api.openpay.mx/v1" if production_mode else "https://sandbox-api.openpay.mx/v1"
-        # Importante: El merchant_id va en el URL
         endpoint = f"{base_url}/{merchant_id}/checkouts"
-        
-        logger.info(f"Target Endpoint: {endpoint}")
 
         # Parsear body
         body = json.loads(event.get('body', '{}'))
         
         title = body.get('title', 'Pago de Servicios')
-        amount = float(body.get('unit_price', 0.0))
+        amount_val = float(body.get('unit_price', 0.0))
         
-        if amount <= 0:
+        if amount_val <= 0:
              return {
                 'statusCode': 400,
                 'headers': headers_cors,
                 'body': json.dumps({'error': 'Invalid amount'})
             }
 
-        # Preparar payload para Checkout
+        # IMPORTANTE: Amount debe ser STRING con 2 decimales
+        amount_str = "{:.2f}".format(amount_val)
+
+        # Preparar payload para Checkout (Basado en documentacion oficial de Checkout)
         checkout_data = {
-            "method": "card",
-            "amount": amount,
+            "amount": amount_str,
+            "currency": "MXN",
             "description": title,
             "order_id": f"ORD-{os.urandom(4).hex().upper()}",
-            "currency": "MXN",
             "redirect_url": f"{origin}/dashboard" if origin else "http://localhost:4200/dashboard",
-            "send_email": False
+            "send_email": "false", # Como string
+            "customer": {
+                "name": "Cliente Inmobiliaria", # Valores por defecto si no vienen en el body
+                "last_name": "Residente",
+                "phone_number": "5512345678",
+                "email": "pago@cliente.com"
+            }
         }
+        
+        # Si el body trae datos del cliente, usarlos
+        if "customer" in body:
+             checkout_data["customer"].update(body["customer"])
+
+        logger.info("Calling OpenPay API: %s with corrected data types", endpoint)
 
         # Realizar peticion con Requests y Basic Auth
-        # Auth: User = PrivateKey, Password = (parámetro vacío)
-        try:
-            response = requests.post(
-                endpoint,
-                json=checkout_data,
-                auth=HTTPBasicAuth(private_key, ''),
-                headers={'Content-Type': 'application/json'},
-                timeout=15
-            )
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Network error calling OpenPay: {str(e)}")
-            return {
-                'statusCode': 503,
-                'headers': headers_cors,
-                'body': json.dumps({'error': f"Connection Error: {str(e)}"})
-            }
+        response = requests.post(
+            endpoint,
+            json=checkout_data,
+            auth=HTTPBasicAuth(private_key, ''),
+            headers={'Content-Type': 'application/json'},
+            timeout=15
+        )
 
         logger.info("OpenPay API Response Status: %s", response.status_code)
         
         if response.status_code not in [200, 201]:
-            logger.error("OpenPay error response: %s", response.text)
+            logger.error("OpenPay error response (1001 fix attempt): %s", response.text)
             return {
                 'statusCode': response.status_code,
                 'headers': headers_cors,
-                'body': response.text # Return the JSON error from OpenPay
+                'body': response.text
             }
 
         result = response.json()
