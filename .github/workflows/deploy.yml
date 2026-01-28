@@ -121,14 +121,14 @@ jobs:
             echo "OPENPAY_MERCHANT_ID=${{ secrets.OPENPAY_MERCHANT_ID_PROD }}" >> .env
             echo "OPENPAY_PUBLIC_KEY=${{ secrets.OPENPAY_PUBLIC_KEY_PROD }}" >> .env
             echo "OPENPAY_PRIVATE_KEY=${{ secrets.OPENPAY_PRIVATE_KEY_PROD }}" >> .env
-            echo "OPENPAY_PRODUCTION_MODE=${{ secrets.OPENPAY_PRODUCTION_MODE_PROD }}" >> .env
+            echo "OPENPAY_PRODUCTION_MODE=true" >> .env
           else
             echo "${{ secrets.ENV_DEV_CONTENT }}" > .env
             echo "MERCADO_PAGO_ACCESS_TOKEN=${{ secrets.MERCADO_PAGO_ACCESS_TOKEN_DEV }}" >> .env
             echo "OPENPAY_MERCHANT_ID=${{ secrets.OPENPAY_MERCHANT_ID_DEV }}" >> .env
             echo "OPENPAY_PUBLIC_KEY=${{ secrets.OPENPAY_PUBLIC_KEY_DEV }}" >> .env
             echo "OPENPAY_PRIVATE_KEY=${{ secrets.OPENPAY_PRIVATE_KEY_DEV }}" >> .env
-            echo "OPENPAY_PRODUCTION_MODE=${{ secrets.OPENPAY_PRODUCTION_MODE_DEV }}" >> .env
+            echo "OPENPAY_PRODUCTION_MODE=false" >> .env
           fi
           # Ensure critical overrides are present
           echo "ENV=${{ steps.set-env.outputs.env }}" >> .env
