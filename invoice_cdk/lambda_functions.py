@@ -26,6 +26,7 @@ class LambdaFunctions(Construct):
     payment_config_lambda: lambda_.Function
     get_invoice_count_lambda: lambda_.Function
     timbrado_service_lambda: lambda_.Function
+    openpay_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -88,6 +89,10 @@ class LambdaFunctions(Construct):
             "MERCADO_PAGO_ACCESS_TOKEN": env_vars.get("MERCADO_PAGO_ACCESS_TOKEN"),
             "MP_WEBHOOK_URL": env_vars.get("MP_WEBHOOK_URL"),
             "CORS": env_vars.get("CORS"),
+            "OPENPAY_MERCHANT_ID": env_vars.get("OPENPAY_MERCHANT_ID"),
+            "OPENPAY_PUBLIC_KEY": env_vars.get("OPENPAY_PUBLIC_KEY"),
+            "OPENPAY_PRIVATE_KEY": env_vars.get("OPENPAY_PRIVATE_KEY"),
+            "OPENPAY_PRODUCTION_MODE": env_vars.get("OPENPAY_PRODUCTION_MODE"),
         }
         
         env_webhook = {
@@ -95,6 +100,10 @@ class LambdaFunctions(Construct):
             "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
             "DB_NAME": env_vars.get("MONGO_DB"),
             "CORS": env_vars.get("CORS"),
+            "OPENPAY_MERCHANT_ID": env_vars.get("OPENPAY_MERCHANT_ID"),
+            "OPENPAY_PUBLIC_KEY": env_vars.get("OPENPAY_PUBLIC_KEY"),
+            "OPENPAY_PRIVATE_KEY": env_vars.get("OPENPAY_PRIVATE_KEY"),
+            "OPENPAY_PRODUCTION_MODE": env_vars.get("OPENPAY_PRODUCTION_MODE"),
         }
 
         pymongo_layer = lambda_.LayerVersion(
@@ -124,6 +133,7 @@ class LambdaFunctions(Construct):
         self.create_payment_config_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
         self.create_get_invoice_count_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
         self.create_timbrado_service_lambda(env_cert, pymongo_layer) # Reusing env_cert (has SW creds)
+        self.create_openpay_lambda(env_mercado_pago, pymongo_layer) # Reusing env_mercado_pago as it has OpenPay credentials
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -513,4 +523,25 @@ class LambdaFunctions(Construct):
             self, "PaymentConfigLambdaAlias",
             alias_name="Prod",
             version=self.payment_config_lambda.current_version
+        )
+
+    def create_openpay_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.openpay_lambda = lambda_.Function(
+            self, "OpenPayLambda",
+            function_name="openpay-lambda-invoice",
+            description="Lambda function to handle OpenPay operations",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="openpay_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(30),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.openpay_alias = lambda_.Alias(
+            self, "OpenPayLambdaAlias",
+            alias_name="Prod",
+            version=self.openpay_lambda.current_version
         )

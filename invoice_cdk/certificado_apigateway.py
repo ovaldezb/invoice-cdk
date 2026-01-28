@@ -33,6 +33,7 @@ class CertificateApiGateway(Construct):
         self.alias_payment_config = alias.get("payment_config_alias")
         self.alias_get_invoice_count = alias.get("get_invoice_count_alias")
         self.alias_timbrado_service = alias.get("timbrado_service_alias")
+        self.alias_openpay = alias.get("openpay_alias")
 
         server = os.getenv("CORS_OPTION")
         print("CORS OPTION:", server)
@@ -132,6 +133,11 @@ class CertificateApiGateway(Construct):
         invoices_resource = api.root.add_resource("invoices")
         invoice_count_resource = invoices_resource.add_resource("count")
 
+        # OpenPay resource
+        openpay_resource = api.root.add_resource("openpay")
+        openpay_checkout_resource = openpay_resource.add_resource("create-checkout")
+        openpay_webhook_resource = openpay_resource.add_resource("webhook")
+
         # Integrations
         certificate_integration = apigw.LambdaIntegration(
             self.alias_certificate,
@@ -217,6 +223,11 @@ class CertificateApiGateway(Construct):
             request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
         )
 
+        openpay_integration = apigw.LambdaIntegration(
+            self.alias_openpay,
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
+        )
+
         # Certificate methods (CON CUSTOM AUTHORIZER)
         certificates_resource.add_method("POST", certificate_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
         certificates_resource.add_method("GET", certificate_integration,authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
@@ -283,6 +294,10 @@ class CertificateApiGateway(Construct):
         mp_config_resource.add_method("DELETE", payment_config_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
         # Invoice Count method (Protected)
         invoice_count_resource.add_method("GET", get_invoice_count_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+
+        # OpenPay methods
+        openpay_checkout_resource.add_method("POST", openpay_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+        openpay_webhook_resource.add_method("POST", openpay_integration) # Public
 
         # Timbrado Service resource
         timbrado_service_resource = api.root.add_resource("timbrado-service")
