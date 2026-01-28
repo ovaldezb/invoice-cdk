@@ -10,7 +10,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 def handler(event, context):
-    logger.info("OpenPay Event received (Requests version): %s", json.dumps(event))
+    logger.info("OpenPay Event received: %s", json.dumps(event))
 
     headers_incoming = event.get("headers", {})
     origin = headers_incoming.get("origin") or headers_incoming.get("Origin")
@@ -27,21 +27,29 @@ def handler(event, context):
     
     try:
         # Configurar OpenPay credentials
-        merchant_id = os.environ.get('OPENPAY_MERCHANT_ID')
-        private_key = os.environ.get('OPENPAY_PRIVATE_KEY')
-        production_mode = os.environ.get('OPENPAY_PRODUCTION_MODE', 'false').lower() == 'true'
+        merchant_id = os.environ.get('OPENPAY_MERCHANT_ID', '').strip()
+        private_key = os.environ.get('OPENPAY_PRIVATE_KEY', '').strip()
+        production_mode_str = os.environ.get('OPENPAY_PRODUCTION_MODE', 'false').lower().strip()
+        production_mode = production_mode_str == 'true'
+
+        # Debug logs (masked for security)
+        masked_key = f"{private_key[:7]}...{private_key[-4:]}" if len(private_key) > 11 else "***"
+        logger.info(f"OpenPay Config: MerchantID={merchant_id}, PrivateKey={masked_key}, ProductionMode={production_mode}")
 
         if not all([merchant_id, private_key]):
-            logger.error("OpenPay credentials not found in environment")
+            logger.error("Missing OpenPay credentials in environment")
             return {
                 'statusCode': 500,
                 'headers': headers_cors,
-                'body': json.dumps({'error': 'Internal Server Configuration Error'})
+                'body': json.dumps({'error': 'Internal Server Configuration Error: Missing Credentials'})
             }
 
         # Determinar base URL
         base_url = "https://api.openpay.mx/v1" if production_mode else "https://sandbox-api.openpay.mx/v1"
+        # Importante: El merchant_id va en el URL
         endpoint = f"{base_url}/{merchant_id}/checkouts"
+        
+        logger.info(f"Target Endpoint: {endpoint}")
 
         # Parsear body
         body = json.loads(event.get('body', '{}'))
@@ -67,16 +75,23 @@ def handler(event, context):
             "send_email": False
         }
 
-        logger.info("Calling OpenPay API: %s with data: %s", endpoint, json.dumps(checkout_data))
-
         # Realizar peticion con Requests y Basic Auth
-        # Auth: User = PrivateKey, Password = (empty)
-        response = requests.post(
-            endpoint,
-            json=checkout_data,
-            auth=HTTPBasicAuth(private_key, ''),
-            headers={'Content-Type': 'application/json'}
-        )
+        # Auth: User = PrivateKey, Password = (parámetro vacío)
+        try:
+            response = requests.post(
+                endpoint,
+                json=checkout_data,
+                auth=HTTPBasicAuth(private_key, ''),
+                headers={'Content-Type': 'application/json'},
+                timeout=15
+            )
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Network error calling OpenPay: {str(e)}")
+            return {
+                'statusCode': 503,
+                'headers': headers_cors,
+                'body': json.dumps({'error': f"Connection Error: {str(e)}"})
+            }
 
         logger.info("OpenPay API Response Status: %s", response.status_code)
         
@@ -85,12 +100,11 @@ def handler(event, context):
             return {
                 'statusCode': response.status_code,
                 'headers': headers_cors,
-                'body': response.text
+                'body': response.text # Return the JSON error from OpenPay
             }
 
         result = response.json()
         
-        # OpenPay devuelve 'id' y 'checkout_link' para el objeto checkout
         return {
             'statusCode': 200,
             'headers': headers_cors,
@@ -101,7 +115,7 @@ def handler(event, context):
         }
 
     except Exception as e:
-        logger.error("Error in OpenPay handler: %s", str(e))
+        logger.error("Unexpected error in OpenPay handler: %s", str(e))
         return {
             'statusCode': 500,
             'headers': headers_cors,
