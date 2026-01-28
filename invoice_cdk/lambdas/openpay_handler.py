@@ -61,6 +61,16 @@ def handler(event, context):
         amount_str = "{:.2f}".format(amount_val)
 
         # Preparar payload para Checkout (Basado en documentacion oficial de Checkout)
+        customer_body = body.get('customer', {})
+        
+        # Combinar datos por defecto con lo que venga en el body
+        customer_data = {
+            "name": customer_body.get("name", "Cliente Inmobiliaria"),
+            "last_name": customer_body.get("last_name", "Residente"),
+            "phone_number": customer_body.get("phone_number", "5512345678"),
+            "email": customer_body.get("email", "pago@cliente.com")
+        }
+
         checkout_data = {
             "amount": amount_str,
             "currency": "MXN",
@@ -68,19 +78,10 @@ def handler(event, context):
             "order_id": f"ORD-{os.urandom(4).hex().upper()}",
             "redirect_url": f"{origin}/dashboard" if origin else "http://localhost:4200/dashboard",
             "send_email": "false", # Como string
-            "customer": {
-                "name": "Cliente Inmobiliaria", # Valores por defecto si no vienen en el body
-                "last_name": "Residente",
-                "phone_number": "5512345678",
-                "email": "pago@cliente.com"
-            }
+            "customer": customer_data
         }
-        
-        # Si el body trae datos del cliente, usarlos
-        if "customer" in body:
-             checkout_data["customer"].update(body["customer"])
 
-        logger.info("Calling OpenPay API: %s with corrected data types", endpoint)
+        logger.info("Calling OpenPay API: %s with customer: %s", endpoint, customer_data)
 
         # Realizar peticion con Requests y Basic Auth
         response = requests.post(

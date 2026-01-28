@@ -42,7 +42,8 @@ class InvoiceCdkStack(Stack):
             "payment_config_alias": self.lambda_functions.payment_config_alias,
             "get_invoice_count_alias": self.lambda_functions.get_invoice_count_alias,
             "timbrado_service_alias": self.lambda_functions.timbrado_service_alias,
-            "openpay_alias": self.lambda_functions.openpay_alias
+            "openpay_alias": self.lambda_functions.openpay_alias,
+            "openpay_webhook_alias": self.lambda_functions.openpay_webhook_alias
         }
         # Create API Gateway for the certificate lambda
         CertificateApiGateway(self, "CertificateApiGateway", alias, self.cognito_invoice.user_pool_cognito)

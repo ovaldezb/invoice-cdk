@@ -34,7 +34,8 @@ class CertificateApiGateway(Construct):
         self.alias_get_invoice_count = alias.get("get_invoice_count_alias")
         self.alias_timbrado_service = alias.get("timbrado_service_alias")
         self.alias_openpay = alias.get("openpay_alias")
-
+        self.alias_openpay_webhook = alias.get("openpay_webhook_alias")
+        
         server = os.getenv("CORS_OPTION")
         print("CORS OPTION:", server)
         # Create a single RestApi instance
@@ -297,7 +298,12 @@ class CertificateApiGateway(Construct):
 
         # OpenPay methods
         openpay_checkout_resource.add_method("POST", openpay_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
-        openpay_webhook_resource.add_method("POST", openpay_integration) # Public
+        
+        openpay_webhook_integration = apigw.LambdaIntegration(
+            self.alias_openpay_webhook,
+            request_templates={APPLICATION_JSON: '{ "statusCode": "200" }'}
+        )
+        openpay_webhook_resource.add_method("POST", openpay_webhook_integration) # Public
 
         # Timbrado Service resource
         timbrado_service_resource = api.root.add_resource("timbrado-service")

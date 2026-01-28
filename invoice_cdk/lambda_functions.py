@@ -27,6 +27,7 @@ class LambdaFunctions(Construct):
     get_invoice_count_lambda: lambda_.Function
     timbrado_service_lambda: lambda_.Function
     openpay_lambda: lambda_.Function
+    openpay_webhook_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -134,6 +135,7 @@ class LambdaFunctions(Construct):
         self.create_get_invoice_count_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
         self.create_timbrado_service_lambda(env_cert, pymongo_layer) # Reusing env_cert (has SW creds)
         self.create_openpay_lambda(env_mercado_pago, pymongo_layer) # Reusing env_mercado_pago as it has OpenPay credentials
+        self.create_openpay_webhook_lambda(env_webhook, pymongo_layer) # Reusing env_webhook (has Mongo access)
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -544,4 +546,46 @@ class LambdaFunctions(Construct):
             self, "OpenPayLambdaAlias",
             alias_name="Prod",
             version=self.openpay_lambda.current_version
+        )
+
+    def create_openpay_webhook_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.openpay_webhook_lambda = lambda_.Function(
+            self, "OpenPayWebhookLambda",
+            function_name="openpay-webhook-lambda-invoice",
+            description="Lambda function to handle OpenPay Webhooks",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="openpay_webhook_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(30),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.openpay_webhook_alias = lambda_.Alias(
+            self, "OpenPayWebhookLambdaAlias",
+            alias_name="Prod",
+            version=self.openpay_webhook_lambda.current_version
+        )
+
+    def create_openpay_webhook_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.openpay_webhook_lambda = lambda_.Function(
+            self, "OpenPayWebhookLambda",
+            function_name="openpay-webhook-lambda-invoice",
+            description="Lambda function to handle OpenPay Webhooks",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="openpay_webhook_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(30),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.openpay_webhook_alias = lambda_.Alias(
+            self, "OpenPayWebhookLambdaAlias",
+            alias_name="Prod",
+            version=self.openpay_webhook_lambda.current_version
         )
