@@ -86,9 +86,7 @@ class LambdaFunctions(Construct):
         }
         
 
-        env_mercado_pago = {
-            "MERCADO_PAGO_ACCESS_TOKEN": env_vars.get("MERCADO_PAGO_ACCESS_TOKEN"),
-            "MP_WEBHOOK_URL": env_vars.get("MP_WEBHOOK_URL"),
+        env_openpay = {
             "CORS": env_vars.get("CORS"),
             "OPENPAY_MERCHANT_ID": env_vars.get("OPENPAY_MERCHANT_ID"),
             "OPENPAY_PUBLIC_KEY": env_vars.get("OPENPAY_PUBLIC_KEY"),
@@ -97,7 +95,6 @@ class LambdaFunctions(Construct):
         }
         
         env_webhook = {
-            "MERCADO_PAGO_ACCESS_TOKEN": env_vars.get("MERCADO_PAGO_ACCESS_TOKEN"),
             "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
             "DB_NAME": env_vars.get("MONGO_DB"),
             "CORS": env_vars.get("CORS"),
@@ -132,7 +129,7 @@ class LambdaFunctions(Construct):
         self.create_payment_config_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
         self.create_get_invoice_count_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
         self.create_timbrado_service_lambda(env_cert, pymongo_layer) # Reusing env_cert (has SW creds)
-        self.create_openpay_lambda(env_mercado_pago, pymongo_layer) # Reusing env_mercado_pago as it has OpenPay credentials
+        self.create_openpay_lambda(env_openpay, pymongo_layer) # Using env_openpay for OpenPay credentials
         self.create_openpay_webhook_lambda(env_webhook, pymongo_layer) # Reusing env_webhook (has Mongo access)
 
     def create_post_confirmation_lambda(self, env: dict,):
