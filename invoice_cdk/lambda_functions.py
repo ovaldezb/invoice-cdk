@@ -128,8 +128,6 @@ class LambdaFunctions(Construct):
         self.create_parsea_pdf_regimen_lambda(env_cors,pymongo_layer)
         self.create_environment_handler_lambda(env_cors,pymongo_layer)
         self.create_bitacora_lambda(env, pymongo_layer)
-        self.create_mercado_pago_lambda(env_mercado_pago, pymongo_layer)
-        self.create_mercado_pago_webhook_lambda(env_webhook, pymongo_layer)
         self.create_get_payments_lambda(env_webhook, pymongo_layer) # Reusing env_webhook as it needs Mongo access
         self.create_payment_config_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
         self.create_get_invoice_count_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
@@ -443,47 +441,6 @@ class LambdaFunctions(Construct):
             version=self.bitacora_lambda.current_version
         )
 
-    def create_mercado_pago_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
-        self.mercado_pago_lambda = lambda_.Function(
-            self, "MercadoPagoLambda",
-            function_name="mercado-pago-lambda-invoice",
-            description="Lambda function to handle Mercado Pago operations",
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            handler="mercado_pago_handler.handler",
-            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
-            layers=[pymongo_layer],
-            environment=env,
-            timeout=Duration.seconds(30),
-            current_version_options=lambda_.VersionOptions(
-                removal_policy=RemovalPolicy.RETAIN
-            )
-        )
-        self.mercado_pago_alias = lambda_.Alias(
-            self, "MercadoPagoLambdaAlias",
-            alias_name="Prod",
-            version=self.mercado_pago_lambda.current_version
-        )
-
-    def create_mercado_pago_webhook_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
-        self.mercado_pago_webhook_lambda = lambda_.Function(
-            self, "MercadoPagoWebhookLambda",
-            function_name="mercado-pago-webhook-lambda-invoice",
-            description="Lambda function to handle Mercado Pago Webhooks",
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            handler="mercado_pago_webhook_handler.handler",
-            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
-            layers=[pymongo_layer],
-            environment=env,
-            timeout=Duration.seconds(30),
-            current_version_options=lambda_.VersionOptions(
-                removal_policy=RemovalPolicy.RETAIN
-            )
-        )
-        self.mercado_pago_webhook_alias = lambda_.Alias(
-            self, "MercadoPagoWebhookLambdaAlias",
-            alias_name="Prod",
-            version=self.mercado_pago_webhook_lambda.current_version
-        )
 
     def create_get_payments_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
         self.get_payments_lambda = lambda_.Function(
