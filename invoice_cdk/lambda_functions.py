@@ -1,6 +1,7 @@
 from aws_cdk import Duration, aws_lambda as lambda_, RemovalPolicy
 from constructs import Construct
 from dotenv import dotenv_values
+import os
 
 INVOICE_LAMBDAS_PATH = "invoice_cdk/lambdas"
 class LambdaFunctions(Construct):
@@ -17,7 +18,16 @@ class LambdaFunctions(Construct):
     timbres_consumo_lambda: lambda_.Function
     parsea_pdf_regimen_lambda: lambda_.Function
     environment_handler_lambda: lambda_.Function
+    environment_handler_lambda: lambda_.Function
     bitacora_lambda: lambda_.Function
+    mercado_pago_lambda: lambda_.Function
+    mercado_pago_webhook_lambda: lambda_.Function
+    get_payments_lambda: lambda_.Function
+    payment_config_lambda: lambda_.Function
+    get_invoice_count_lambda: lambda_.Function
+    timbrado_service_lambda: lambda_.Function
+    openpay_lambda: lambda_.Function
+    openpay_webhook_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -26,7 +36,7 @@ class LambdaFunctions(Construct):
         env_vars = dotenv_values(".env")
         env = {
             "VERSION":env_vars.get("VERSION"),
-            "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
+            "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
             "DB_NAME": env_vars.get("MONGO_DB"),
             "CORS": env_vars.get("CORS"),
             "ENV": env_vars.get("ENV")
@@ -36,7 +46,7 @@ class LambdaFunctions(Construct):
             "ENV": env_vars.get("ENV")
         }
         env_tapetes = {
-            "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
+            "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
             "DB_NAME": env_vars.get("MONGO_DB"),
             "TAPETES_API_URL": env_vars.get("TAPETES_API_URL"),
             "TAPETES_USER_NAME": env_vars.get("TAPETES_USER_NAME"),
@@ -52,7 +62,7 @@ class LambdaFunctions(Construct):
             "TAPETES_API_URL": env_vars.get("TAPETES_API_URL"),
             "TAPETES_USER_NAME": env_vars.get("TAPETES_USER_NAME"),
             "TAPETES_PASSWORD": env_vars.get("TAPETES_PASSWORD"),
-            "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
+            "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
             "DB_NAME":       env_vars.get("MONGO_DB"),
             "SMTP_HOST":     env_vars.get("SMTP_HOST"),
             "SMTP_PORT":     env_vars.get("SMTP_PORT"),
@@ -70,9 +80,28 @@ class LambdaFunctions(Construct):
             "SW_USER_PASSWORD": env_vars.get("SW_USER_PASSWORD"),
             "SW_URL": env_vars.get("SW_URL"),
             "CORS": env_vars.get("CORS"),
-            "MONGODB_URI": f"mongodb+srv://{env_vars.get("MONGO_USER")}:{env_vars.get("MONGO_PW")}@{env_vars.get("MONGO_HOST")}/{env_vars.get("MONGO_DB")}?retryWrites=true&w=majority",
+            "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
             "DB_NAME": env_vars.get("MONGO_DB"),
             "ENV": env_vars.get("ENV")
+        }
+        
+
+        env_openpay = {
+            "CORS": env_vars.get("CORS"),
+            "OPENPAY_MERCHANT_ID": env_vars.get("OPENPAY_MERCHANT_ID"),
+            "OPENPAY_PUBLIC_KEY": env_vars.get("OPENPAY_PUBLIC_KEY"),
+            "OPENPAY_PRIVATE_KEY": env_vars.get("OPENPAY_PRIVATE_KEY"),
+            "OPENPAY_PRODUCTION_MODE": env_vars.get("OPENPAY_PRODUCTION_MODE"),
+        }
+        
+        env_webhook = {
+            "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
+            "DB_NAME": env_vars.get("MONGO_DB"),
+            "CORS": env_vars.get("CORS"),
+            "OPENPAY_MERCHANT_ID": env_vars.get("OPENPAY_MERCHANT_ID"),
+            "OPENPAY_PUBLIC_KEY": env_vars.get("OPENPAY_PUBLIC_KEY"),
+            "OPENPAY_PRIVATE_KEY": env_vars.get("OPENPAY_PRIVATE_KEY"),
+            "OPENPAY_PRODUCTION_MODE": env_vars.get("OPENPAY_PRODUCTION_MODE"),
         }
 
         pymongo_layer = lambda_.LayerVersion(
@@ -96,6 +125,12 @@ class LambdaFunctions(Construct):
         self.create_parsea_pdf_regimen_lambda(env_cors,pymongo_layer)
         self.create_environment_handler_lambda(env_cors,pymongo_layer)
         self.create_bitacora_lambda(env, pymongo_layer)
+        self.create_get_payments_lambda(env_webhook, pymongo_layer) # Reusing env_webhook as it needs Mongo access
+        self.create_payment_config_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
+        self.create_get_invoice_count_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
+        self.create_timbrado_service_lambda(env_cert, pymongo_layer) # Reusing env_cert (has SW creds)
+        self.create_openpay_lambda(env_openpay, pymongo_layer) # Using env_openpay for OpenPay credentials
+        self.create_openpay_webhook_lambda(env_webhook, pymongo_layer) # Reusing env_webhook (has Mongo access)
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -105,6 +140,48 @@ class LambdaFunctions(Construct):
             handler="cognitoPostConf.handler",
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             environment=env
+        )
+
+    def create_get_invoice_count_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.get_invoice_count_lambda = lambda_.Function(
+            self, "GetInvoiceCountLambda",
+            function_name="get-invoice-count-lambda-invoice",
+            description="Lambda function to count invoices for billing",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="get_invoice_count_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(30),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.get_invoice_count_alias = lambda_.Alias(
+            self, "GetInvoiceCountLambdaAlias",
+            alias_name="Prod",
+            version=self.get_invoice_count_lambda.current_version
+        )
+
+    def create_timbrado_service_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.timbrado_service_lambda = lambda_.Function(
+            self, "TimbradoServiceLambda",
+            function_name="timbrado-service-lambda-invoice",
+            description="Lambda function for service invoice stamping",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="timbrado_service_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer], # Optional if no mongo access needed, but harmless
+            environment=env, # Needs SW_* vars
+            timeout=Duration.seconds(35),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.timbrado_service_alias = lambda_.Alias(
+            self, "TimbradoServiceLambdaAlias",
+            alias_name="Prod",
+            version=self.timbrado_service_lambda.current_version
         )
 
     def create_certificate_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
@@ -359,4 +436,110 @@ class LambdaFunctions(Construct):
             self, "BitacoraLambdaAlias",
             alias_name="Prod",
             version=self.bitacora_lambda.current_version
+        )
+
+
+    def create_get_payments_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.get_payments_lambda = lambda_.Function(
+            self, "GetPaymentsLambda",
+            function_name="get-payments-lambda-invoice",
+            description="Lambda function to fetch recent payments",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="get_payments_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(30),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.get_payments_alias = lambda_.Alias(
+            self, "GetPaymentsLambdaAlias",
+            alias_name="Prod",
+            version=self.get_payments_lambda.current_version
+        )
+
+    def create_payment_config_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.payment_config_lambda = lambda_.Function(
+            self, "PaymentConfigLambda",
+            function_name="payment-config-lambda-invoice",
+            description="Lambda function to handle payment configuration",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="payment_config_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(30),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.payment_config_alias = lambda_.Alias(
+            self, "PaymentConfigLambdaAlias",
+            alias_name="Prod",
+            version=self.payment_config_lambda.current_version
+        )
+
+    def create_openpay_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.openpay_lambda = lambda_.Function(
+            self, "OpenPayLambda",
+            function_name="openpay-lambda-invoice",
+            description="Lambda function to handle OpenPay operations",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="openpay_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(30),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.openpay_alias = lambda_.Alias(
+            self, "OpenPayLambdaAlias",
+            alias_name="Prod",
+            version=self.openpay_lambda.current_version
+        )
+
+    def create_openpay_webhook_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.openpay_webhook_lambda = lambda_.Function(
+            self, "OpenPayWebhookLambda",
+            function_name="openpay-webhook-lambda-invoice",
+            description="Lambda function to handle OpenPay Webhooks",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="openpay_webhook_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(30),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.openpay_webhook_alias = lambda_.Alias(
+            self, "OpenPayWebhookLambdaAlias",
+            alias_name="Prod",
+            version=self.openpay_webhook_lambda.current_version
+        )
+
+    def create_openpay_webhook_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.openpay_webhook_lambda = lambda_.Function(
+            self, "OpenPayWebhookLambda",
+            function_name="openpay-webhook-lambda-invoice",
+            description="Lambda function to handle OpenPay Webhooks",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="openpay_webhook_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(30),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.openpay_webhook_alias = lambda_.Alias(
+            self, "OpenPayWebhookLambdaAlias",
+            alias_name="Prod",
+            version=self.openpay_webhook_lambda.current_version
         )

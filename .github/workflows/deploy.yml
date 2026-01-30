@@ -5,11 +5,18 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+  workflow_dispatch:
 
 jobs:
   test:
     name: Test and Lint
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+
     steps:
       - uses: actions/checkout@v4
 
@@ -37,10 +44,19 @@ jobs:
           # The run_tests.sh requires .env_test to exist
           cp .env.example .env_test || touch .env_test
           echo "TESTING=true" >> .env_test
+          echo "CORS=*" >> .env_test
+          echo "MONGODB_URI=mongodb://localhost:27017/test" >> .env_test
+          echo "DB_NAME=test" >> .env_test
+          echo "ENV=test" >> .env_test
 
       - name: Run Tests
         run: |
           chmod +x run_tests.sh
+          # Wait for MongoDB to be ready
+          until nc -z localhost 27017; do
+            echo "Waiting for MongoDB..."
+            sleep 1
+          done
           ./run_tests.sh all
         env:
           PYTHONPATH: .
@@ -50,6 +66,8 @@ jobs:
     needs: test
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'Production' || 'Development' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -67,7 +85,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.12'
           cache: 'pip'
 
       - name: Install dependencies
@@ -76,21 +94,51 @@ jobs:
           pip install -r requirements.txt
           npm install -g aws-cdk
 
+      - name: Build Lambda Layer
+        run: |
+          mkdir -p lambda_layers/python/lib/python3.12/site-packages
+          pip install -r lambda_layers/requirements.txt -t lambda_layers/python/lib/python3.12/site-packages
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ steps.set-env.outputs.region }}
+          aws-region: ${{ github.ref == 'refs/heads/main' && secrets.AWS_REGION_PROD || secrets.AWS_REGION_DEV }}
 
-      # - name: Deploy CDK
-      #   run: |
-      #     export ENVIRONMENT=${{ steps.set-env.outputs.env }}
-      #     # cdk deploy --all --require-approval never # Uncomment when ready
-      #     echo "Deploying to $ENVIRONMENT in ${{ steps.set-env.outputs.region }}"
-      #   env:
-      #     # Inject any other environment variables needed by the CDK app from Secrets
-      #     MONGODB_URI: ${{ secrets.MONGODB_URI }}
-        env:
-          # Inject any other environment variables needed by the CDK app from Secrets
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+      - name: Deployment Summary
+        run: |
+          echo "### 🚀 Deployment Info" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** ${{ steps.set-env.outputs.env }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region:** ${{ github.ref == 'refs/heads/main' && secrets.AWS_REGION_PROD || secrets.AWS_REGION_DEV }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Create .env file
+        run: |
+          if [ "${{ steps.set-env.outputs.env }}" = "prod" ]; then
+            echo "${{ secrets.ENV_PROD_CONTENT }}" > .env
+            echo "OPENPAY_MERCHANT_ID=${{ secrets.OPENPAY_MERCHANT_ID_PROD }}" >> .env
+            echo "OPENPAY_PUBLIC_KEY=${{ secrets.OPENPAY_PUBLIC_KEY_PROD }}" >> .env
+            echo "OPENPAY_PRIVATE_KEY=${{ secrets.OPENPAY_PRIVATE_KEY_PROD }}" >> .env
+            echo "OPENPAY_PRODUCTION_MODE=true" >> .env
+          else
+            echo "${{ secrets.ENV_DEV_CONTENT }}" > .env
+            echo "OPENPAY_MERCHANT_ID=${{ secrets.OPENPAY_MERCHANT_ID_DEV }}" >> .env
+            echo "OPENPAY_PUBLIC_KEY=${{ secrets.OPENPAY_PUBLIC_KEY_DEV }}" >> .env
+            echo "OPENPAY_PRIVATE_KEY=${{ secrets.OPENPAY_PRIVATE_KEY_DEV }}" >> .env
+            echo "OPENPAY_PRODUCTION_MODE=false" >> .env
+          fi
+          # Ensure critical overrides are present
+          echo "ENV=${{ steps.set-env.outputs.env }}" >> .env
+
+      - name: Validate Envs
+        run: python scripts/ci/validate_envs.py
+
+
+
+      - name: Deploy CDK
+        run: |
+          export ENVIRONMENT=${{ steps.set-env.outputs.env }}
+          cdk deploy --all --require-approval never
+          echo "Deploying to $ENVIRONMENT in ${{ steps.set-env.outputs.region }}"
+

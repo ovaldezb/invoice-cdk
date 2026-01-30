@@ -21,8 +21,6 @@ ENVIRONMENT = os.getenv("ENV")
 USER_NAME_CLIENT = os.getenv("TAPETES_USER_NAME")
 PASSWORD_CLIENT = os.getenv("TAPETES_PASSWORD")
 TAPETES_API_URL = os.getenv("TAPETES_API_URL")
-FACTURAPI_URL = os.getenv("FACTURAPI_URL")
-FACTURAPI_TOKEN = os.getenv("FACTURAPI_TOKEN")
 
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client[os.getenv("DB_NAME")]

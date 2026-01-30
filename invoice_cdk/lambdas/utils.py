@@ -1,5 +1,5 @@
 import os
-cors=os.getenv("CORS").split(",")
+cors = (os.getenv("CORS") or "*").split(",")
 
 def valida_cors(origin):
     if origin in cors:
