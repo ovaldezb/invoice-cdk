@@ -120,7 +120,7 @@ jobs:
             echo "OPENPAY_MERCHANT_ID=${{ secrets.OPENPAY_MERCHANT_ID_PROD }}" >> .env
             echo "OPENPAY_PUBLIC_KEY=${{ secrets.OPENPAY_PUBLIC_KEY_PROD }}" >> .env
             echo "OPENPAY_PRIVATE_KEY=${{ secrets.OPENPAY_PRIVATE_KEY_PROD }}" >> .env
-            echo "OPENPAY_PRODUCTION_MODE=true" >> .env
+            echo "OPENPAY_PRODUCTION_MODE=false" >> .env
           else
             echo "${{ secrets.ENV_DEV_CONTENT }}" > .env
             echo "OPENPAY_MERCHANT_ID=${{ secrets.OPENPAY_MERCHANT_ID_DEV }}" >> .env
