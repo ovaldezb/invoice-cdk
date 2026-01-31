@@ -5,7 +5,7 @@ from fpdf import FPDF
 import xml.etree.ElementTree as ET
 import io
 from num2words import num2words
-from tufan_logo import tufan_logo_base64
+from tufan_logo import tufan_logo_base64, farzin_logo_base64
 
 class CFDIPDF_FPDF_Generator():
     def __init__(self, xml_string: str, qrCode: str, cadena_original_sat: str, noTicket: str, fecha_hora_venta: str, direccion: str, empresa:str, regimen_fiscal_emisor: str, regimen_fiscal_receptor: str) -> None:
@@ -73,25 +73,27 @@ class CFDIPDF_FPDF_Generator():
         pdf.set_line_width(0.5)  # Opcional: regresa al grosor por defecto
         pdf.line(10, pdf.get_y(), 200, pdf.get_y())  # Línea de 10mm a 200mm en la posición vertical actual
         
-        # Emisor/Receptor - Usar logo en base64
+        # Emisor/Receptor - Usar logo en base64 según empresa
         try:
-            logo_base64 = tufan_logo_base64()  # Usar logo TUFAN por defecto
+            # Seleccionar logo según empresa
+            if self.empresa == 'FARZIN':
+                logo_base64 = farzin_logo_base64()
+            else:
+                # Por defecto usar TUFAN para cualquier otra empresa
+                logo_base64 = tufan_logo_base64()
+                
             logo_bytes = base64.b64decode(logo_base64)
             
-            # Crear archivo temporal para el logo
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_logo:
+            # Usar BytesIO para evitar archivos temporales en Lambda
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=True) as temp_logo:
                 temp_logo.write(logo_bytes)
-                temp_logo_path = temp_logo.name
-            
-            # Usar el logo en el PDF
-            pdf.image(temp_logo_path, x=10, y=18, w=40)
-            
-            # Limpiar archivo temporal
-            os.unlink(temp_logo_path)
+                temp_logo.flush()
+                # Usar el logo en el PDF
+                pdf.image(temp_logo.name, x=10, y=18, w=40)
             
         except Exception as e:
-            # Si falla cargar el logo, continuar sin logo
-            print(f"Error cargando logo: {str(e)}")
+            # Si falla cargar el logo, continuar sin logo para no romper la facturación
+            print(f"Error cargando logo para empresa {self.empresa}: {str(e)}")
             pass
         pdf.set_font("Arial", '', 8)
         emisor = self.data['emisor']
