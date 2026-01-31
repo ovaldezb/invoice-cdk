@@ -19,7 +19,7 @@ layer.zip
 main*.py
 run_test.sh
 *.xml
-*.png
+
 *.pdf
 mongo_*.sh
 
