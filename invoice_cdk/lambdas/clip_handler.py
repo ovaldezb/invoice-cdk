@@ -58,6 +58,12 @@ def handler(event, context):
         customer_body = body.get('customer', {})
         customer_email = customer_body.get('email', 'pago@cliente.com')
 
+        # Build dynamic webhook url
+        domain_name = event.get('requestContext', {}).get('domainName', '')
+        path = event.get('requestContext', {}).get('path', '/clip/create-checkout')
+        webhook_path = path.replace('/create-checkout', '/webhook')
+        webhook_url = f"https://{domain_name}{webhook_path}" if domain_name else ""
+
         # Preparar payload para Checkout de Clip
         checkout_data = {
             "amount": round(amount_val, 2),
@@ -68,6 +74,7 @@ def handler(event, context):
                 "error": f"{origin}/dashboard" if origin else "http://localhost:4200/dashboard",
                 "default": f"{origin}/dashboard" if origin else "http://localhost:4200/dashboard"
             },
+            "webhook_url": webhook_url,
             "metadata": {
                 "custom_info": f"Invoice Payment for {customer_email}"
             }
