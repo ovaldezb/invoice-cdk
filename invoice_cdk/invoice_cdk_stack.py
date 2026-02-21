@@ -36,6 +36,8 @@ class InvoiceCdkStack(Stack):
             "parsea_pdf_regimen_alias": self.lambda_functions.parsea_pdf_regimen_alias,
             "environment_handler_alias": self.lambda_functions.environment_handler_alias,
             "bitacora_alias": self.lambda_functions.bitacora_alias,
+            "get_payments_alias": self.lambda_functions.get_payments_alias,
+            "payment_config_alias": self.lambda_functions.payment_config_alias,
             "get_invoice_count_alias": self.lambda_functions.get_invoice_count_alias,
             "timbrado_service_alias": self.lambda_functions.timbrado_service_alias,
             "clip_alias": self.lambda_functions.clip_alias,
