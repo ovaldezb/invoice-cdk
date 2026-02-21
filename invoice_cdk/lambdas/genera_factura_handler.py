@@ -100,6 +100,7 @@ def handler(event, context):
                 headers={"Content-Type": "application/jsontoxml","Authorization": f"Bearer {sw_token.get('data').get('token')}"},  # Fixed token extraction
                 data=json.dumps(timbrado)
             ).json()
+            print(factura_generada)
             #4.1 Validar si hubo error en la generación de la factura
             if factura_generada.get("status") == 'error':
                 #revisar este punto si se debe decrementar el folio
