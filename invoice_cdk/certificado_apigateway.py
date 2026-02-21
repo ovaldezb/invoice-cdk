@@ -124,6 +124,7 @@ class CertificateApiGateway(Construct):
         bitacora_integration = apigw.LambdaIntegration(self.alias_bitacora)
         get_payments_integration = apigw.LambdaIntegration(self.alias_get_payments)
         payment_config_integration = apigw.LambdaIntegration(self.alias_payment_config)
+        get_invoice_count_integration = apigw.LambdaIntegration(self.alias_get_invoice_count)
         clip_integration = apigw.LambdaIntegration(self.alias_clip)
         clip_webhook_integration = apigw.LambdaIntegration(self.alias_clip_webhook)
         timbrado_service_integration = apigw.LambdaIntegration(self.alias_timbrado_service)
