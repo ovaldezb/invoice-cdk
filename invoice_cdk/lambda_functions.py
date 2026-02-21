@@ -122,6 +122,8 @@ class LambdaFunctions(Construct):
         self.create_environment_handler_lambda(env_cors,pymongo_layer)
         self.create_bitacora_lambda(env, pymongo_layer)
         self.create_get_payments_lambda(env_webhook, pymongo_layer) # Reusing env_webhook as it needs Mongo access
+        self.create_payment_config_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
+        self.create_get_invoice_count_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
         self.create_timbrado_service_lambda(env_cert, pymongo_layer) # Reusing env_cert (has SW creds)
         self.create_clip_lambda(env_clip, pymongo_layer) # Using env_clip for Clip credentials
         self.create_clip_webhook_lambda(env_webhook, pymongo_layer) # Using env_webhook (Mongo access)
