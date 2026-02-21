@@ -34,6 +34,7 @@ class CertificateApiGateway(Construct):
         self.alias_get_invoice_count = alias.get("get_invoice_count_alias")
         self.alias_clip = alias.get("clip_alias")
         self.alias_clip_webhook = alias.get("clip_webhook_alias")
+        self.alias_timbrado_service = alias.get("timbrado_service_alias")
         
         server = os.getenv("CORS_OPTION")
         print("CORS OPTION:", server)
