@@ -39,15 +39,15 @@ def handler(event, context):
             }
 
         # Determinar base URL
-        # Clip uses https://api.payclip.com for both prod and sandbox. The API KEY determines the environment.
         base_url = "https://api.payclip.com"
-        endpoint = f"{base_url}/checkout"
+        endpoint = f"{base_url}/payments"
 
         # Parsear body
         body = json.loads(event.get('body', '{}'))
         
         title = body.get('title', 'Pago de Servicios')
         amount_val = float(body.get('unit_price', 0.0))
+        card_token_id = body.get('card_token_id')
         
         if amount_val <= 0:
              return {
@@ -56,32 +56,32 @@ def handler(event, context):
                 'body': json.dumps({'error': 'Invalid amount'})
             }
 
+        if not card_token_id:
+             return {
+                'statusCode': 400,
+                'headers': headers_cors,
+                'body': json.dumps({'error': 'Missing card_token_id'})
+            }
+
         customer_body = body.get('customer', {})
         customer_email = customer_body.get('email', 'pago@cliente.com')
+        customer_phone = customer_body.get('phone_number', '5555555555')
 
-        # Build dynamic webhook url
-        domain_name = event.get('requestContext', {}).get('domainName', '')
-        path = event.get('requestContext', {}).get('path', '/clip/create-checkout')
-        webhook_path = path.replace('/create-checkout', '/webhook')
-        webhook_url = f"https://{domain_name}{webhook_path}" if domain_name else ""
-
-        # Preparar payload para Checkout de Clip
-        checkout_data = {
+        # Preparar payload para Pago Transparente de Clip
+        payment_data = {
             "amount": round(amount_val, 2),
             "currency": "MXN",
-            "purchase_description": title,
-            "redirection_url": {
-                "success": f"{origin}/dashboard" if origin else "http://localhost:4200/dashboard",
-                "error": f"{origin}/dashboard" if origin else "http://localhost:4200/dashboard",
-                "default": f"{origin}/dashboard" if origin else "http://localhost:4200/dashboard"
+            "description": title,
+            "payment_method": {
+                "token": card_token_id
             },
-            "webhook_url": webhook_url,
-            "metadata": {
-                "custom_info": f"Invoice Payment for {customer_email}"
+            "customer": {
+                "email": customer_email,
+                "phone": customer_phone
             }
         }
 
-        logger.info("Calling Clip API: %s", endpoint)
+        logger.info("Calling Clip Payments API: %s", endpoint)
 
         # Realizar peticion con Requests y Auth Bearer (o Basic segun doc de clip, asumo HTTP Basic para server a server o token bearer)
         # Segun https://developer.clip.mx/reference/createnewpaymentlink, usa Basic auth con x-api-key en header un token en auth
@@ -95,9 +95,9 @@ def handler(event, context):
 
         response = requests.post(
             endpoint,
-            json=checkout_data,
+            json=payment_data,
             headers=headers,
-            timeout=15
+            timeout=25
         )
 
         logger.info("Clip API Response Status: %s", response.status_code)
@@ -112,12 +112,39 @@ def handler(event, context):
 
         result = response.json()
         
+        status = result.get('status', '')
+        internal_status = 'pending'
+        if status == 'APPROVED':
+            internal_status = 'approved'
+        elif status in ['DECLINED', 'CANCELLED', 'ERROR', 'FAILED']:
+            internal_status = 'rejected'
+            
+        # Intentar insertar en MongoDB directamente para respuesta sincrona
+        try:
+            from db import get_db_collection
+            import datetime
+            collection = get_db_collection()
+            if collection is not None:
+                payment_record = {
+                    'provider': 'CLIP',
+                    'status': internal_status,
+                    'transaction_amount': amount_val,
+                    'date_created': datetime.datetime.utcnow().isoformat() + "Z",
+                    'original_payload': result,
+                    'receipt_no': result.get('receipt_no', '')
+                }
+                collection.insert_one(payment_record)
+        except Exception as e:
+            logger.error("Could not insert payment into MongoDB: %s", str(e))
+        
         return {
             'statusCode': 200,
             'headers': headers_cors,
             'body': json.dumps({
-                'id': result.get('payment_request_id'),
-                'checkout_url': result.get('payment_request_url')
+                'id': result.get('id', result.get('payment_request_id')),
+                'status': internal_status,
+                'receipt_no': result.get('receipt_no'),
+                'clip_response': result
             })
         }
 
