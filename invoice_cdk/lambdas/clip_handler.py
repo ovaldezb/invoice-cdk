@@ -39,7 +39,8 @@ def handler(event, context):
             }
 
         # Determinar base URL
-        base_url = "https://api.payclip.com" if production_mode else "https://api-dev.payclip.com"
+        # Clip uses https://api.payclip.com for both prod and sandbox. The API KEY determines the environment.
+        base_url = "https://api.payclip.com"
         endpoint = f"{base_url}/checkout"
 
         # Parsear body
