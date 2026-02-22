@@ -90,7 +90,7 @@ def handler(event, context):
         headers = {
             "accept": "application/vnd.com.payclip.v2+json",
             "content-type": "application/json",
-            "x-api-key": clip_api_key
+            "Authorization": f"Basic {clip_api_key}"
         }
 
         response = requests.post(
