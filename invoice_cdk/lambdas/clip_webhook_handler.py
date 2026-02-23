@@ -58,9 +58,9 @@ def handler(event, context):
         
         # Determine internal status
         internal_status = 'pending'
-        if status == 'APPROVED':
+        if status in ['APPROVED', 'PAID']:
             internal_status = 'approved'
-        elif status == 'DECLINED' or status == 'CANCELLED':
+        elif status in ['DECLINED', 'CANCELLED', 'ERROR', 'FAILED']:
             internal_status = 'rejected'
         
         try:
@@ -80,8 +80,16 @@ def handler(event, context):
 
         collection = get_db_collection()
         if collection is not None:
-            collection.insert_one(payment_record)
-            logger.info("Payment record inserted into MongoDB with status: %s", internal_status)
+            if receipt_no:
+                collection.update_one(
+                    {'receipt_no': receipt_no, 'provider': 'CLIP'},
+                    {'$set': payment_record},
+                    upsert=True
+                )
+                logger.info("Payment record updated/upserted into MongoDB with status: %s", internal_status)
+            else:
+                collection.insert_one(payment_record)
+                logger.info("Payment record inserted into MongoDB with status: %s", internal_status)
         else:
             logger.error("Could not obtain DB collection reference")
             return {
