@@ -89,6 +89,7 @@ class LambdaFunctions(Construct):
         env_clip = {
             "CORS": env_vars.get("CORS"),
             "CLIP_API_KEY": env_vars.get("CLIP_API_KEY"),
+            "CLIP_SECRET_KEY": env_vars.get("CLIP_SECRET_KEY"),
             "CLIP_PRODUCTION_MODE": env_vars.get("CLIP_PRODUCTION_MODE"),
         }
         
@@ -97,6 +98,7 @@ class LambdaFunctions(Construct):
             "DB_NAME": env_vars.get("MONGO_DB"),
             "CORS": env_vars.get("CORS"),
             "CLIP_API_KEY": env_vars.get("CLIP_API_KEY"),
+            "CLIP_SECRET_KEY": env_vars.get("CLIP_SECRET_KEY"),
             "CLIP_PRODUCTION_MODE": env_vars.get("CLIP_PRODUCTION_MODE"),
         }
 

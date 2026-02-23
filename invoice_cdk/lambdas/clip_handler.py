@@ -2,6 +2,7 @@ import json
 import os
 import logging
 import requests
+import base64
 from utils import valida_cors
 from constantes import Constants
 
@@ -27,6 +28,7 @@ def handler(event, context):
     try:
         # Configurar Clip credentials
         clip_api_key = os.environ.get('CLIP_API_KEY', '').strip()
+        clip_secret_key = os.environ.get('CLIP_SECRET_KEY', '').strip()
         production_mode_str = os.environ.get('CLIP_PRODUCTION_MODE', 'false').lower().strip()
         production_mode = production_mode_str == 'true'
 
@@ -86,11 +88,14 @@ def handler(event, context):
         # Realizar peticion con Requests y Auth Bearer (o Basic segun doc de clip, asumo HTTP Basic para server a server o token bearer)
         # Segun https://developer.clip.mx/reference/createnewpaymentlink, usa Basic auth con x-api-key en header un token en auth
         # Actually standard clip uses Basic auth o Header x-api-key o Bearer dependiendo. As lets set x-api-key o Authorization
+        # Generar Token Basic a partir de Key y Secret
+        credentials = f"{clip_api_key}:{clip_secret_key}"
+        encoded_credentials = base64.b64encode(credentials.encode('utf-8')).decode('utf-8')
         
         headers = {
             "accept": "application/vnd.com.payclip.v2+json",
             "content-type": "application/json",
-            "Authorization": f"Basic {clip_api_key}"
+            "Authorization": f"Basic {encoded_credentials}"
         }
 
         response = requests.post(
