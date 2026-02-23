@@ -3,8 +3,25 @@ import os
 import logging
 import requests
 import base64
+from pymongo import MongoClient
 from utils import valida_cors
 from constantes import Constants
+
+# Configurar MongoDB
+client = None
+db_conn = None
+payments_collection = None
+
+def get_db_collection():
+    global client, db_conn, payments_collection
+    if client is None:
+        try:
+            client = MongoClient(os.environ['MONGODB_URI'])
+            db_conn = client[os.environ['DB_NAME']]
+            payments_collection = db_conn['payments']
+        except Exception as e:
+            logger.error("Error connecting to MongoDB: %s", str(e))
+    return payments_collection
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -126,7 +143,6 @@ def handler(event, context):
             
         # Intentar insertar en MongoDB directamente para respuesta sincrona
         try:
-            from db import get_db_collection
             import datetime
             collection = get_db_collection()
             if collection is not None:

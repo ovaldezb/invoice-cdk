@@ -87,6 +87,8 @@ class LambdaFunctions(Construct):
         
 
         env_clip = {
+            "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
+            "DB_NAME": env_vars.get("MONGO_DB"),
             "CORS": env_vars.get("CORS"),
             "CLIP_API_KEY": env_vars.get("CLIP_API_KEY"),
             "CLIP_SECRET_KEY": env_vars.get("CLIP_SECRET_KEY"),
