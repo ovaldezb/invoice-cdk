@@ -21,6 +21,7 @@ ENVIRONMENT = os.getenv("ENV")
 USER_NAME_CLIENT = os.getenv("TAPETES_USER_NAME")
 PASSWORD_CLIENT = os.getenv("TAPETES_PASSWORD")
 TAPETES_API_URL = os.getenv("TAPETES_API_URL")
+TAPETES_API_URL_BACKUP = os.getenv("TAPETES_API_URL_BACKUP")
 
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client[os.getenv("DB_NAME")]
@@ -117,20 +118,9 @@ def handler(event, context):
             dom = xml.dom.minidom.parseString(factura_generada["data"]["cfdi"])
             pretty_xml = dom.toprettyxml(indent="  ")
             xml_escaped = pretty_xml.replace('"',r'\"')
-            print(f"Environment: {ENVIRONMENT}")
+            
             if(ENVIRONMENT == 'Prod'):
-            #5.1 Obtener el token del endpoint del cliente (Tapetes)
-                form_data = {
-                    "username": USER_NAME_CLIENT,
-                    "password": PASSWORD_CLIENT
-                }
-                response = requests.post(
-                    f"{TAPETES_API_URL}token", 
-                    headers=headersEndpoint, 
-                    data=form_data
-                )
-                token = response.json().get("access_token")
-            #5.2 Enviar la factura generada al endpoint del cliente (Tapetes)
+            #5.1 preparar el body para enviar al endpoint
                 body_envio_endpoint=json.dumps({
                                 "erfc"     : timbrado['Emisor']['Rfc'],
                                 "sucursal" : sucursal,
@@ -151,12 +141,49 @@ def handler(event, context):
                                 "xml_cfdi" : pretty_xml, 
                                 "xml_cfdi_b64" : base64.b64encode(xml_escaped.encode()).decode()
                                 })
-
-                requests.post(
-                    f"{TAPETES_API_URL}recibefacturas/",
-                    headers={"Accept": APPLICATION_JSON, "Content-Type": APPLICATION_JSON, "Authorization": f"Bearer {token}"},
-                    data=body_envio_endpoint
-                )
+                print(body_envio_endpoint)    
+            #5.2 Obtener el token del endpoint del cliente (Tapetes)
+                try:
+                    form_data = {
+                        "username": USER_NAME_CLIENT,
+                        "password": PASSWORD_CLIENT
+                    }
+                    response = requests.post(
+                        f"{TAPETES_API_URL}token", 
+                        headers=headersEndpoint, 
+                        data=form_data
+                    )
+                    token = response.json().get("access_token")            
+                    requests.post(
+                        f"{TAPETES_API_URL}recibefacturas/",
+                        headers={"Accept": APPLICATION_JSON, "Content-Type": APPLICATION_JSON, "Authorization": f"Bearer {token}"},
+                        data=body_envio_endpoint
+                    )
+                    print(f"Factura enviada al url: {TAPETES_API_URL}")
+                except Exception as e:
+                    print(f"Error al enviar factura a tapetes: {e}")
+                    print(f"Se enviara al 2do Endpoint {TAPETES_API_URL_BACKUP}")
+                    try:
+                        form_data = {
+                            "username": USER_NAME_CLIENT,
+                            "password": PASSWORD_CLIENT
+                        }
+                        response_backup = requests.post(
+                            f"{TAPETES_API_URL_BACKUP}token", 
+                            headers=headersEndpoint, 
+                            data=form_data
+                        )
+                        token_backup = response_backup.json().get("access_token")
+                        requests.post(
+                            f"{TAPETES_API_URL_BACKUP}recibefacturas/",
+                            headers={"Accept": APPLICATION_JSON, "Content-Type": APPLICATION_JSON, "Authorization": f"Bearer {token_backup}"},
+                            data=body_envio_endpoint
+                        )
+                        print(f"Factura enviada al url de respaldo: {TAPETES_API_URL_BACKUP}")
+                    except Exception as e:
+                        traceback.print_exc()
+                        bitacora_collection.insert_one({"ticket": ticket, "rfc": timbrado['Receptor']['Rfc'], "rfcEmisor": timbrado['Emisor']['Rfc'],  "email": email_receptor, "mensaje": f"Error: {str(e)}","status": "error", "traceback": traceback.format_exc(), "timestamp": (datetime.now(timezone.utc)- timedelta(hours=6)).isoformat()})
+                        print(f"Error al enviar factura al endpoint de respaldo: {e}")
 
             #6. Guardar la factura generada en la base de datos
             factura_generada["data"]["sucursal"]=sucursal
