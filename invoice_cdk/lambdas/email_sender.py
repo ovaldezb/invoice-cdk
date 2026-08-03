@@ -1,3 +1,4 @@
+from email.header import Header
 from email.utils import formataddr, make_msgid
 import os
 import smtplib
@@ -34,8 +35,10 @@ class EmailSender:
         msg['From'] = formataddr((FROM, REPLY_TO))
         msg['To'] = ', '.join([recipient_email])
         msg['Reply-To'] = REPLY_TO
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body_text, 'plain'))
+        msg['Subject'] = Header(subject, 'utf-8')
+        # charset explicito: sin el, el cuerpo se arma como us-ascii y los
+        # nombres/tickets con enie o acentos llegan ilegibles al receptor.
+        msg.attach(MIMEText(body_text, 'plain', 'utf-8'))
         # Headers anti-spam críticos
         msg['Message-ID'] = make_msgid(domain="farzin.com.mx")
         msg['X-Mailer'] = 'Facturacion Farzin v1.0'
@@ -61,7 +64,7 @@ class EmailSender:
 
         if cfdi_xml:
             xml_bytes = cfdi_xml.encode('utf-8') if isinstance(cfdi_xml, str) else cfdi_xml
-            part_xml = MIMEBase('application', 'xml')
+            part_xml = MIMEBase('application', 'xml', charset='utf-8')
             part_xml.set_payload(xml_bytes)
             encoders.encode_base64(part_xml)
             part_xml.add_header('Content-Disposition', f'attachment; filename="{xml_filename}"')
