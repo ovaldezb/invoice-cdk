@@ -193,8 +193,8 @@ def handler(event, context):
                     traceback.print_exc()
                     body_envio_endpoint = None
                     registra_bitacora(ticket, timbrado, email_receptor,
-                                      f"No se pudo armar el envio al ERP: {e}", "advertencia",
-                                      incluir_traceback=True)
+                                    f"No se pudo armar el envio al ERP: {e}", "advertencia",
+                                    incluir_traceback=True)
             #5.2 Obtener el token del endpoint del cliente (Tapetes)
             if(ENVIRONMENT == 'Prod' and body_envio_endpoint):
                 try:
