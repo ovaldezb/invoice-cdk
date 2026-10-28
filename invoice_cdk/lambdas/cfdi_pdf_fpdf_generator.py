@@ -1,11 +1,63 @@
 import base64
 import tempfile
-import os
+import unicodedata
 from fpdf import FPDF
 import xml.etree.ElementTree as ET
 import io
 from num2words import num2words
-from tufan_logo import tufan_logo_base64, farzin_logo_base64
+
+# fpdf 1.7.2 con fuentes core (Arial) solo sabe codificar latin-1: cualquier
+# caracter fuera de ese rango lanza UnicodeEncodeError y tumbaba la generacion
+# del PDF. La enie y los acentos si caben en latin-1, pero la comilla tipografica,
+# el guion largo o el simbolo de grados no, y llegan seguido desde el autollenado
+# de la Constancia de Situacion Fiscal.
+_TRANSLITERACIONES = {
+    '‘': "'", '’': "'", '‚': "'", '‛': "'",
+    '“': '"', '”': '"', '„': '"', '‟': '"',
+    '′': "'", '″': '"',
+    '–': '-', '—': '-', '―': '-', '−': '-',
+    '…': '...', '•': '-', ' ': ' ',
+    '€': 'EUR', '™': '(TM)', '℃': ' C', '℉': ' F',
+}
+
+
+def sanea_latin1(texto):
+    """Deja el texto en un subconjunto que fpdf pueda imprimir sin reventar.
+
+    Degrada caracter por caracter (no con un NFKD global) para no perder la
+    enie ni los acentos, que si son representables en latin-1.
+    """
+    if texto is None:
+        return ''
+    if not isinstance(texto, str):
+        texto = str(texto)
+    for original, reemplazo in _TRANSLITERACIONES.items():
+        texto = texto.replace(original, reemplazo)
+    try:
+        texto.encode('latin-1')
+        return texto
+    except UnicodeEncodeError:
+        pass
+    salida = []
+    for caracter in texto:
+        try:
+            caracter.encode('latin-1')
+            salida.append(caracter)
+        except UnicodeEncodeError:
+            degradado = unicodedata.normalize('NFKD', caracter).encode('latin-1', 'ignore').decode('latin-1')
+            salida.append(degradado if degradado else '?')
+    return ''.join(salida)
+
+
+class _FPDFSeguro(FPDF):
+    """FPDF que sanea todo texto antes de escribirlo."""
+
+    def cell(self, w, h=0, txt='', *args, **kwargs):
+        return super().cell(w, h, sanea_latin1(txt), *args, **kwargs)
+
+    def multi_cell(self, w, h, txt='', *args, **kwargs):
+        return super().multi_cell(w, h, sanea_latin1(txt), *args, **kwargs)
+
 
 class CFDIPDF_FPDF_Generator():
     def __init__(self, xml_string: str, qrCode: str, cadena_original_sat: str, noTicket: str, fecha_hora_venta: str, direccion: str, empresa:str, regimen_fiscal_emisor: str, regimen_fiscal_receptor: str) -> None:
@@ -44,13 +96,17 @@ class CFDIPDF_FPDF_Generator():
         if conceptos is not None:
             for concepto in conceptos.findall('cfdi:Concepto', ns):
                 concepto_data = concepto.attrib.copy()
-                # Buscar impuestos trasladados
+                # Buscar impuestos trasladados. traslados/traslado se reinician en
+                # cada vuelta: antes conservaban el valor del concepto anterior
+                # (o reventaban con UnboundLocalError en el primero sin impuestos).
+                traslados = None
+                traslado = None
                 impuestos = concepto.find('cfdi:Impuestos', ns)
                 if impuestos is not None:
                     traslados = impuestos.find('cfdi:Traslados', ns)
                     if traslados is not None:
                         traslado = traslados.find('cfdi:Traslado', ns)
-                concepto_data['impuestos'] = traslado.attrib if impuestos is not None and traslados is not None and traslado is not None else {}
+                concepto_data['impuestos'] = traslado.attrib if traslado is not None else {}
                 data['conceptos'].append(concepto_data)
         timbre = comprobante.find('cfdi:Complemento/tfd:TimbreFiscalDigital', 
                                   {
@@ -66,35 +122,18 @@ class CFDIPDF_FPDF_Generator():
         return data
 
     def generate_pdf(self) -> bytes:
-        pdf = FPDF()
+        pdf = _FPDFSeguro()
         pdf.add_page()
         pdf.set_font("Arial", '', 6)
         pdf.cell(0, 6, "Este documento es una representación impresa de un CFDI", ln=True,align='L')
         pdf.set_line_width(0.5)  # Opcional: regresa al grosor por defecto
         pdf.line(10, pdf.get_y(), 200, pdf.get_y())  # Línea de 10mm a 200mm en la posición vertical actual
         
-        # Emisor/Receptor - Usar logo en base64 según empresa
-        try:
-            # Seleccionar logo según empresa
-            if self.empresa == 'FARZIN':
-                logo_base64 = farzin_logo_base64()
-            else:
-                # Por defecto usar TUFAN para cualquier otra empresa
-                logo_base64 = tufan_logo_base64()
-                
-            logo_bytes = base64.b64decode(logo_base64)
-            
-            # Usar BytesIO para evitar archivos temporales en Lambda
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=True) as temp_logo:
-                temp_logo.write(logo_bytes)
-                temp_logo.flush()
-                # Usar el logo en el PDF
-                pdf.image(temp_logo.name, x=10, y=18, w=40)
-            
-        except Exception as e:
-            # Si falla cargar el logo, continuar sin logo para no romper la facturación
-            print(f"Error cargando logo para empresa {self.empresa}: {str(e)}")
-            pass
+        # Emisor/Receptor
+        if(self.empresa != 'FARZIN' and self.empresa != 'TUFAN'):
+            pdf.image('TUFAN-logo.png', x=10, y=18, w=40)  # Ajusta la ruta y tamaño del logo según sea necesario
+        else:
+            pdf.image(self.empresa + '-logo.png', x=10, y=18, w=40)  # Ajusta la ruta y tamaño del logo según sea necesario
         pdf.set_font("Arial", '', 8)
         emisor = self.data['emisor']
         pdf.cell(42,4, '')
@@ -207,7 +246,11 @@ class CFDIPDF_FPDF_Generator():
         pdf.set_font("Arial", '', 7)
         impuesto_total = 0.0
         MAX_LENGTH_DESCRIPCION = 40
-        
+        # Inicializadas fuera del ciclo: el bloque de continuacion de descripcion
+        # las lee despues y reventaba con NameError si no habia conceptos.
+        descripcion_full = ''
+        last_space = 0
+
         for concepto in self.data['conceptos']:
             row_size = 6
             descripcion_full = concepto.get('Descripcion', '')
@@ -224,8 +267,9 @@ class CFDIPDF_FPDF_Generator():
             pdf.cell(12, 6, concepto.get('Unidad', ''), align='C', border=0)
             pdf.cell(60, row_size, descripcion_short, align='L', border=0)
             pdf.cell(20, 6, '$'+f"{float(concepto.get('ValorUnitario', 0.0)):,.2f}", align='C', border=0)
-            pdf.cell(20, 6, '$'+f"{float(concepto['impuestos']['Importe']):,.2f}", align='C', border=0)
-            impuesto_total += float(concepto['impuestos'].get('Importe', 0.0))
+            importe_impuesto = float(concepto['impuestos'].get('Importe', 0.0) or 0.0)
+            pdf.cell(20, 6, '$'+f"{importe_impuesto:,.2f}", align='C', border=0)
+            impuesto_total += importe_impuesto
             pdf.cell(20, 6, '$'+f"{float(concepto.get('Importe', 0.0)):,.2f}", align='C', border='R', ln=True)
         if len(descripcion_full) > MAX_LENGTH_DESCRIPCION:
             y = pdf.get_y()

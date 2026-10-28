@@ -32,9 +32,9 @@ class CertificateApiGateway(Construct):
         self.alias_get_payments = alias.get("get_payments_alias")
         self.alias_payment_config = alias.get("payment_config_alias")
         self.alias_get_invoice_count = alias.get("get_invoice_count_alias")
+        self.alias_clip = alias.get("clip_alias")
+        self.alias_clip_webhook = alias.get("clip_webhook_alias")
         self.alias_timbrado_service = alias.get("timbrado_service_alias")
-        self.alias_openpay = alias.get("openpay_alias")
-        self.alias_openpay_webhook = alias.get("openpay_webhook_alias")
         
         server = os.getenv("CORS_OPTION")
         print("CORS OPTION:", server)
@@ -103,10 +103,10 @@ class CertificateApiGateway(Construct):
         payments_resource = api.root.add_resource("payments")
         payments_config_resource = api.root.add_resource("payments-config")
 
-        # OpenPay resources
-        openpay_resource = api.root.add_resource("openpay")
-        openpay_checkout_resource = openpay_resource.add_resource("create-checkout")
-        openpay_webhook_resource = openpay_resource.add_resource("webhook")
+        # Clip resources
+        clip_resource = api.root.add_resource("clip")
+        clip_checkout_resource = clip_resource.add_resource("create-checkout")
+        clip_webhook_resource = clip_resource.add_resource("webhook")
 
         # Timbrado Service resource
         timbrado_service_resource = api.root.add_resource("timbrado-service")
@@ -126,8 +126,8 @@ class CertificateApiGateway(Construct):
         get_payments_integration = apigw.LambdaIntegration(self.alias_get_payments)
         payment_config_integration = apigw.LambdaIntegration(self.alias_payment_config)
         get_invoice_count_integration = apigw.LambdaIntegration(self.alias_get_invoice_count)
-        openpay_integration = apigw.LambdaIntegration(self.alias_openpay)
-        openpay_webhook_integration = apigw.LambdaIntegration(self.alias_openpay_webhook)
+        clip_integration = apigw.LambdaIntegration(self.alias_clip)
+        clip_webhook_integration = apigw.LambdaIntegration(self.alias_clip_webhook)
         timbrado_service_integration = apigw.LambdaIntegration(self.alias_timbrado_service)
 
         # Methods
@@ -187,9 +187,9 @@ class CertificateApiGateway(Construct):
         # Invoice Count
         invoice_count_resource.add_method("GET", get_invoice_count_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
 
-        # OpenPay
-        openpay_checkout_resource.add_method("POST", openpay_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
-        openpay_webhook_resource.add_method("POST", openpay_webhook_integration) # Public
+        # Clip
+        clip_checkout_resource.add_method("POST", clip_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+        clip_webhook_resource.add_method("POST", clip_webhook_integration) # Public
 
         # Timbrado Service
         timbrado_service_resource.add_method("POST", timbrado_service_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)

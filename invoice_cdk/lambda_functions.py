@@ -26,8 +26,8 @@ class LambdaFunctions(Construct):
     payment_config_lambda: lambda_.Function
     get_invoice_count_lambda: lambda_.Function
     timbrado_service_lambda: lambda_.Function
-    openpay_lambda: lambda_.Function
-    openpay_webhook_lambda: lambda_.Function
+    clip_lambda: lambda_.Function
+    clip_webhook_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -49,6 +49,7 @@ class LambdaFunctions(Construct):
             "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
             "DB_NAME": env_vars.get("MONGO_DB"),
             "TAPETES_API_URL": env_vars.get("TAPETES_API_URL"),
+            "TAPETES_API_URL_BACKUP": env_vars.get("TAPETES_API_URL_BACKUP"),
             "TAPETES_USER_NAME": env_vars.get("TAPETES_USER_NAME"),
             "TAPETES_PASSWORD": env_vars.get("TAPETES_PASSWORD"),
             "CORS": env_vars.get("CORS"),
@@ -60,6 +61,7 @@ class LambdaFunctions(Construct):
             "SW_USER_PASSWORD": env_vars.get("SW_USER_PASSWORD"),
             "SW_URL": env_vars.get("SW_URL"),
             "TAPETES_API_URL": env_vars.get("TAPETES_API_URL"),
+            "TAPETES_API_URL_BACKUP": env_vars.get("TAPETES_API_URL_BACKUP"),
             "TAPETES_USER_NAME": env_vars.get("TAPETES_USER_NAME"),
             "TAPETES_PASSWORD": env_vars.get("TAPETES_PASSWORD"),
             "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
@@ -86,22 +88,22 @@ class LambdaFunctions(Construct):
         }
         
 
-        env_openpay = {
+        env_clip = {
+            "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
+            "DB_NAME": env_vars.get("MONGO_DB"),
             "CORS": env_vars.get("CORS"),
-            "OPENPAY_MERCHANT_ID": env_vars.get("OPENPAY_MERCHANT_ID"),
-            "OPENPAY_PUBLIC_KEY": env_vars.get("OPENPAY_PUBLIC_KEY"),
-            "OPENPAY_PRIVATE_KEY": env_vars.get("OPENPAY_PRIVATE_KEY"),
-            "OPENPAY_PRODUCTION_MODE": env_vars.get("OPENPAY_PRODUCTION_MODE"),
+            "CLIP_API_KEY": env_vars.get("CLIP_API_KEY"),
+            "CLIP_SECRET_KEY": env_vars.get("CLIP_SECRET_KEY"),
+            "CLIP_PRODUCTION_MODE": env_vars.get("CLIP_PRODUCTION_MODE"),
         }
         
         env_webhook = {
             "MONGODB_URI": f"mongodb+srv://{env_vars.get('MONGO_USER')}:{env_vars.get('MONGO_PW')}@{env_vars.get('MONGO_HOST')}/{env_vars.get('MONGO_DB')}?retryWrites=true&w=majority",
             "DB_NAME": env_vars.get("MONGO_DB"),
             "CORS": env_vars.get("CORS"),
-            "OPENPAY_MERCHANT_ID": env_vars.get("OPENPAY_MERCHANT_ID"),
-            "OPENPAY_PUBLIC_KEY": env_vars.get("OPENPAY_PUBLIC_KEY"),
-            "OPENPAY_PRIVATE_KEY": env_vars.get("OPENPAY_PRIVATE_KEY"),
-            "OPENPAY_PRODUCTION_MODE": env_vars.get("OPENPAY_PRODUCTION_MODE"),
+            "CLIP_API_KEY": env_vars.get("CLIP_API_KEY"),
+            "CLIP_SECRET_KEY": env_vars.get("CLIP_SECRET_KEY"),
+            "CLIP_PRODUCTION_MODE": env_vars.get("CLIP_PRODUCTION_MODE"),
         }
 
         pymongo_layer = lambda_.LayerVersion(
@@ -129,8 +131,8 @@ class LambdaFunctions(Construct):
         self.create_payment_config_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
         self.create_get_invoice_count_lambda(env_webhook, pymongo_layer) # Reusing env_webhook
         self.create_timbrado_service_lambda(env_cert, pymongo_layer) # Reusing env_cert (has SW creds)
-        self.create_openpay_lambda(env_openpay, pymongo_layer) # Using env_openpay for OpenPay credentials
-        self.create_openpay_webhook_lambda(env_webhook, pymongo_layer) # Reusing env_webhook (has Mongo access)
+        self.create_clip_lambda(env_clip, pymongo_layer) # Using env_clip for Clip credentials
+        self.create_clip_webhook_lambda(env_webhook, pymongo_layer) # Using env_webhook (Mongo access)
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -481,13 +483,13 @@ class LambdaFunctions(Construct):
             version=self.payment_config_lambda.current_version
         )
 
-    def create_openpay_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
-        self.openpay_lambda = lambda_.Function(
-            self, "OpenPayLambda",
-            function_name="openpay-lambda-invoice",
-            description="Lambda function to handle OpenPay operations",
+    def create_clip_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.clip_lambda = lambda_.Function(
+            self, "ClipLambda",
+            function_name="clip-lambda-invoice",
+            description="Lambda function to handle Clip operations",
             runtime=lambda_.Runtime.PYTHON_3_12,
-            handler="openpay_handler.handler",
+            handler="clip_handler.handler",
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,
@@ -496,19 +498,19 @@ class LambdaFunctions(Construct):
                 removal_policy=RemovalPolicy.RETAIN
             )
         )
-        self.openpay_alias = lambda_.Alias(
-            self, "OpenPayLambdaAlias",
+        self.clip_alias = lambda_.Alias(
+            self, "ClipLambdaAlias",
             alias_name="Prod",
-            version=self.openpay_lambda.current_version
+            version=self.clip_lambda.current_version
         )
 
-    def create_openpay_webhook_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
-        self.openpay_webhook_lambda = lambda_.Function(
-            self, "OpenPayWebhookLambda",
-            function_name="openpay-webhook-lambda-invoice",
-            description="Lambda function to handle OpenPay Webhooks",
+    def create_clip_webhook_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.clip_webhook_lambda = lambda_.Function(
+            self, "ClipWebhookLambda",
+            function_name="clip-webhook-lambda-invoice",
+            description="Lambda function to handle Clip Webhooks",
             runtime=lambda_.Runtime.PYTHON_3_12,
-            handler="openpay_webhook_handler.handler",
+            handler="clip_webhook_handler.handler",
             code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
             layers=[pymongo_layer],
             environment=env,
@@ -517,29 +519,8 @@ class LambdaFunctions(Construct):
                 removal_policy=RemovalPolicy.RETAIN
             )
         )
-        self.openpay_webhook_alias = lambda_.Alias(
-            self, "OpenPayWebhookLambdaAlias",
+        self.clip_webhook_alias = lambda_.Alias(
+            self, "ClipWebhookLambdaAlias",
             alias_name="Prod",
-            version=self.openpay_webhook_lambda.current_version
-        )
-
-    def create_openpay_webhook_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
-        self.openpay_webhook_lambda = lambda_.Function(
-            self, "OpenPayWebhookLambda",
-            function_name="openpay-webhook-lambda-invoice",
-            description="Lambda function to handle OpenPay Webhooks",
-            runtime=lambda_.Runtime.PYTHON_3_12,
-            handler="openpay_webhook_handler.handler",
-            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
-            layers=[pymongo_layer],
-            environment=env,
-            timeout=Duration.seconds(30),
-            current_version_options=lambda_.VersionOptions(
-                removal_policy=RemovalPolicy.RETAIN
-            )
-        )
-        self.openpay_webhook_alias = lambda_.Alias(
-            self, "OpenPayWebhookLambdaAlias",
-            alias_name="Prod",
-            version=self.openpay_webhook_lambda.current_version
+            version=self.clip_webhook_lambda.current_version
         )

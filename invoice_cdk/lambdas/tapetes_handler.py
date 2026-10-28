@@ -14,6 +14,7 @@ from utils import valida_cors
 user_name = os.getenv("TAPETES_USER_NAME")
 password = os.getenv("TAPETES_PASSWORD")
 tapetes_api_url = os.getenv("TAPETES_API_URL")
+tapetes_api_url_backup = os.getenv("TAPETES_API_URL_BACKUP")
 client = MongoClient(os.getenv("MONGODB_URI"))
 db = client[os.getenv("DB_NAME")]
 sucursal_collection = db["sucursales"]
@@ -38,18 +39,44 @@ def handler(event, context):
                 "username": user_name,
                 "password": password
             }
-            response = requests.post(
-                f"{tapetes_api_url}token", 
-                headers=headersEndpoint, 
-                data=form_data
-            )
-            token = response.json().get("access_token")
-            ticket = path_parameters["ticket"]
-            venta = requests.post(
-                f"{tapetes_api_url}tickets",
-                headers={"Accept": Constants.APPLICATION_JSON, "Content-Type": Constants.APPLICATION_JSON, "Authorization": f"Bearer {token}"},
-                data=json.dumps({"ticket": ticket})
-            )
+            try:
+                response = requests.post(
+                    f"{tapetes_api_url}token", 
+                    headers=headersEndpoint, 
+                    data=form_data
+                )
+                token = response.json().get("access_token")
+                ticket = path_parameters["ticket"]
+                venta = requests.post(
+                    f"{tapetes_api_url}tickets",
+                    headers={"Accept": Constants.APPLICATION_JSON, "Content-Type": Constants.APPLICATION_JSON, "Authorization": f"Bearer {token}"},
+                    data=json.dumps({"ticket": ticket})
+                )
+            except:
+                try:
+                    response = requests.post(
+                        f"{tapetes_api_url_backup}token", 
+                        headers=headersEndpoint, 
+                        data=form_data
+                    )
+                    token = response.json().get("access_token")
+                    ticket = path_parameters["ticket"]
+                    venta = requests.post(
+                        f"{tapetes_api_url_backup}tickets",
+                        headers={"Accept": Constants.APPLICATION_JSON, "Content-Type": Constants.APPLICATION_JSON, "Authorization": f"Bearer {token}"},
+                        data=json.dumps({"ticket": ticket})
+                    )
+                    print(f'se obtuvo Venta por backup: {tapetes_api_url_backup}')
+                except Exception as e:
+                    print(f'Error: {str(e)}')
+                    return {
+                        Constants.STATUS_CODE: HTTPStatus.INTERNAL_SERVER_ERROR,
+                        Constants.HEADERS_KEY: headers,
+                        Constants.BODY: json.dumps({
+                            "message": "Error al obtener la venta con el backup"
+                        })
+                    }
+            
             venta_respuesta = venta.json()
             print(f'Venta: {venta_respuesta}')
             if 'detail' in venta_respuesta:
@@ -73,7 +100,7 @@ def handler(event, context):
                 item['unidad'] = descripcion
             id_certificado = sucursal_data.get("id_certificado")
             certificado = get_certificate_by_id(id_certificado, certificado_collection)
-            print(f'Certificado: {certificado}')
+            
             if not certificado:
                 return {
                     Constants.STATUS_CODE: HTTPStatus.NOT_FOUND,
