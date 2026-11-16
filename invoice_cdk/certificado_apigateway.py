@@ -1,4 +1,5 @@
 from aws_cdk import (
+    CfnOutput,
     Duration,
     aws_lambda as _lambda,
     aws_apigateway as apigw,
@@ -35,6 +36,7 @@ class CertificateApiGateway(Construct):
         self.alias_clip = alias.get("clip_alias")
         self.alias_clip_webhook = alias.get("clip_webhook_alias")
         self.alias_timbrado_service = alias.get("timbrado_service_alias")
+        self.alias_cancelacion = alias.get("cancelacion_alias")
         
         server = os.getenv("CORS_OPTION")
         print("CORS OPTION:", server)
@@ -193,6 +195,28 @@ class CertificateApiGateway(Construct):
 
         # Timbrado Service
         timbrado_service_resource.add_method("POST", timbrado_service_integration, authorizer=authorizer, authorization_type=apigw.AuthorizationType.COGNITO)
+
+        # Cancelación de CFDI (servidor a servidor, protegido con API Key en header x-api-key)
+        cancelacion_resource = api.root.add_resource("cancelacion")
+        cancelacion_integration = apigw.LambdaIntegration(self.alias_cancelacion)
+        cancelacion_resource.add_method("POST", cancelacion_integration, api_key_required=True)
+
+        cancelacion_api_key = api.add_api_key(
+            "CancelacionApiKey",
+            api_key_name="cancelacion-api-key",
+            description="API Key para el endpoint POST /cancelacion"
+        )
+        cancelacion_usage_plan = api.add_usage_plan(
+            "CancelacionUsagePlan",
+            name="cancelacion-usage-plan",
+            description="Limites para el endpoint POST /cancelacion",
+            throttle=apigw.ThrottleSettings(rate_limit=5, burst_limit=10),
+            quota=apigw.QuotaSettings(limit=1000, period=apigw.Period.DAY)
+        )
+        cancelacion_usage_plan.add_api_key(cancelacion_api_key)
+        cancelacion_usage_plan.add_api_stage(stage=api.deployment_stage)
+        CfnOutput(self, "CancelacionApiKeyId", value=cancelacion_api_key.key_id,
+                  description="Id de la API Key de cancelacion (obtener valor con: aws apigateway get-api-key --api-key <id> --include-value)")
 
 
         # Separate API for DatosFactura (if still needed)
