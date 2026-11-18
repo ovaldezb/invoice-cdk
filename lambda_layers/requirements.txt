@@ -1,10 +1,28 @@
-pydantic==1.10.9
-pymongo>=4.3.3
-requests>=2.26.0
-requests-toolbelt>=0.9.1
-cryptography==41.0.7
-num2words>=0.5.12
-pyjwt==2.9.0
-pymupdf>=1.22.5
-fpdf>=1.7.2
-mercadopago>=2.2.0
+# Capa de dependencias compartida por las lambdas (Python 3.12, Linux x86_64).
+# Todas las versiones van fijas (==) para que cada despliegue instale exactamente
+# lo mismo. Con rangos (>=) el CI tomaba la última versión publicada; pymupdf 2.x
+# agregó onnxruntime y numpy, y la capa pasó el límite de 250 MB de AWS.
+# Revisado con pip-audit el 2026-11-17: sin vulnerabilidades conocidas. Capa: ~104 MB.
+
+# --- Dependencias directas ---
+pydantic==1.10.27          # modelos; se mantiene en 1.x (2.x cambia la API)
+pymongo==4.20.0
+requests==2.34.2
+requests-toolbelt==1.0.0
+cryptography==50.0.2       # lectura de certificados .cer
+num2words==0.5.14          # importe con letra en el PDF
+pymupdf==1.26.4            # NO subir a 2.x: excede el tamaño de la capa
+fpdf==1.7.2                # generación del PDF de la factura
+pyjwt==2.15.1              # sin uso actual en las lambdas
+mercadopago==3.6.0         # sin uso actual en las lambdas
+
+# --- Dependencias transitivas ---
+certifi==2026.10.23
+cffi==2.1.1
+charset-normalizer==3.5.2
+dnspython==2.9.2
+docopt==0.6.2
+idna==3.20
+pycparser==3.12
+typing-extensions==4.16.0
+urllib3==2.8.0
