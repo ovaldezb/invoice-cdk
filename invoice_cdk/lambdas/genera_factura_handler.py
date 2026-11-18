@@ -12,6 +12,7 @@ from dbaccess.db_datos_factura import (get_regimen_fiscal_by_clave)
 from dbaccess.db_factura import (guarda_factura_emitida, get_factura_by_ticket)
 from models.factura_emitida import FacturaEmitida
 from email_sender import EmailSender
+from fecha_cfdi import asigna_fecha_emision
 from datetime import datetime, timezone, timedelta
 
 SW_USER_NAME = os.getenv("SW_USER_NAME")
@@ -128,6 +129,9 @@ def handler(event, context):
                 data=json.dumps({"user": SW_USER_NAME, "password": SW_USER_PASSWORD})
             ).json()
             #4. Enviar el timbrado a SW Sapiens
+            # La Fecha se asigna con la hora del servidor: la del navegador puede
+            # estar desfasada y el SAT rechaza diferencias mayores a 72 horas (401).
+            asigna_fecha_emision(timbrado)
             factura_generada = requests.post(
                 f"{SW_URL}/v3/cfdi33/issue/json/v4",
                 headers={"Content-Type": "application/jsontoxml","Authorization": f"Bearer {sw_token.get('data').get('token')}"},  # Fixed token extraction

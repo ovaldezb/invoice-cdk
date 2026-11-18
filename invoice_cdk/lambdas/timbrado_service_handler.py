@@ -2,6 +2,7 @@ import json
 import os
 import requests
 from http import HTTPStatus
+from fecha_cfdi import asigna_fecha_emision
 
 SW_USER_NAME = os.getenv("SW_USER_NAME")
 SW_USER_PASSWORD = os.getenv("SW_USER_PASSWORD")
@@ -33,6 +34,10 @@ def handler(event, context):
                 "headers": headers,
                 "body": json.dumps({"message": "Payload 'timbrado' is required"})
             }
+
+        # La Fecha se asigna con la hora del servidor: la del navegador puede
+        # estar desfasada y el SAT rechaza diferencias mayores a 72 horas (401).
+        asigna_fecha_emision(timbrado_payload)
 
         # 1. Authenticate with SW Sapiens
         auth_response = requests.post(
