@@ -29,6 +29,7 @@ class LambdaFunctions(Construct):
     clip_lambda: lambda_.Function
     clip_webhook_lambda: lambda_.Function
     cancelacion_lambda: lambda_.Function
+    timbrado_xml_lambda: lambda_.Function
 
     pymongo_layer: lambda_.LayerVersion
     
@@ -135,6 +136,7 @@ class LambdaFunctions(Construct):
         self.create_clip_lambda(env_clip, pymongo_layer) # Using env_clip for Clip credentials
         self.create_clip_webhook_lambda(env_webhook, pymongo_layer) # Using env_webhook (Mongo access)
         self.create_cancelacion_lambda(env_cert, pymongo_layer) # Reusing env_cert (SW creds + Mongo)
+        self.create_timbrado_xml_lambda(env_cert, pymongo_layer) # Reusing env_cert (SW creds + Mongo)
 
     def create_post_confirmation_lambda(self, env: dict,):
         self.post_confirmation_lambda = lambda_.Function(
@@ -546,4 +548,25 @@ class LambdaFunctions(Construct):
             self, "CancelacionLambdaAlias",
             alias_name="Prod",
             version=self.cancelacion_lambda.current_version
+        )
+
+    def create_timbrado_xml_lambda(self, env: dict, pymongo_layer: lambda_.LayerVersion):
+        self.timbrado_xml_lambda = lambda_.Function(
+            self, "TimbradoXmlLambda",
+            function_name="timbrado-xml-lambda-invoice",
+            description="Lambda function to stamp an already sealed CFDI XML through SW Sapien",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="timbrado_xml_handler.handler",
+            code=lambda_.Code.from_asset(INVOICE_LAMBDAS_PATH),
+            layers=[pymongo_layer],
+            environment=env,
+            timeout=Duration.seconds(60),
+            current_version_options=lambda_.VersionOptions(
+                removal_policy=RemovalPolicy.RETAIN
+            )
+        )
+        self.timbrado_xml_alias = lambda_.Alias(
+            self, "TimbradoXmlLambdaAlias",
+            alias_name="Prod",
+            version=self.timbrado_xml_lambda.current_version
         )
