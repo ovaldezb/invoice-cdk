@@ -1,0 +1,285 @@
+openapi: 3.0.3
+info:
+  title: API de Cancelación de CFDI
+  version: 1.0.0
+  description: |
+    Cancela facturas electrónicas (CFDI 4.0) ante el SAT.
+
+    - Autenticación: API Key en el header `x-api-key` (se entrega por un canal seguro, una por ambiente).
+    - Uso servidor a servidor: la API Key no debe incluirse en aplicaciones web ni móviles.
+    - Límites: 5 peticiones por segundo (ráfagas de hasta 10) y 1,000 peticiones por día.
+
+    Consulte la guía de integración (`cancelacion-guia.md`) para las reglas de negocio,
+    los motivos de cancelación del SAT y el significado de cada estatus.
+servers:
+  - url: https://v6z1l22kw7.execute-api.us-west-1.amazonaws.com/prod
+    description: Desarrollo (pruebas)
+security:
+  - ApiKeyAuth: []
+paths:
+  /cancelacion:
+    post:
+      operationId: cancelarFactura
+      summary: Solicita la cancelación de un CFDI
+      description: |
+        Envía la solicitud de cancelación al SAT.
+
+        - Facturas emitidas por este sistema: enviar `ticket` y `rfcReceptor`; ambos se validan contra la factura.
+        - Facturas emitidas por otro sistema: enviar `rfcEmisor` y `rfcReceptor`. El emisor debe tener su
+          certificado de sello digital (CSD) registrado en la plataforma.
+
+        Una respuesta 200 con estatus `En proceso de cancelación` significa que el SAT recibió la solicitud,
+        no que la factura ya esté cancelada (puede requerir la aceptación del receptor).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudCancelacion'
+            examples:
+              facturaPropia:
+                summary: Factura emitida por este sistema (motivo 02)
+                value:
+                  uuid: 5AB1CCC8-2CA2-471F-88FE-BBFA84153459
+                  rfcReceptor: URE180429TM6
+                  ticket: "100245"
+                  motivo: "02"
+              conSustitucion:
+                summary: Motivo 01, con factura que la sustituye
+                value:
+                  uuid: 5AB1CCC8-2CA2-471F-88FE-BBFA84153459
+                  rfcReceptor: URE180429TM6
+                  ticket: "100245"
+                  motivo: "01"
+                  folioSustitucion: A29C3936-89A6-4BFD-AC82-B41DA2C51AA4
+              facturaExterna:
+                summary: Factura emitida por otro sistema
+                value:
+                  uuid: 2F0499D1-693B-45F4-B3A6-5C06254933E3
+                  rfcEmisor: EKU9003173C9
+                  rfcReceptor: URE180429TM6
+                  motivo: "03"
+      responses:
+        '200':
+          description: El SAT recibió la solicitud, o la factura ya estaba cancelada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaCancelacion'
+              examples:
+                enProceso:
+                  summary: Solicitud recibida por el SAT
+                  value:
+                    uuid: 5AB1CCC8-2CA2-471F-88FE-BBFA84153459
+                    estatus: En proceso de cancelación
+                    codigoSat: "201"
+                    mensaje: Solicitud de cancelación exitosa.
+                    descripcion: Se considera una solicitud de cancelación exitosa, sin embargo esto no asegura su cancelación.
+                    emitidaPorEsteSistema: true
+                    acuse: "<?xml version=\"1.0\" encoding=\"utf-8\"?><Acuse ...>...</Acuse>"
+                yaCancelada:
+                  summary: La factura ya estaba cancelada ante el SAT
+                  value:
+                    uuid: 5AB1CCC8-2CA2-471F-88FE-BBFA84153459
+                    estatus: Cancelada
+                    codigoSat: "202"
+                    mensaje: Folio Fiscal Previamente Cancelado.
+                    descripcion: "..."
+                    emitidaPorEsteSistema: true
+                    acuse: "<?xml version=\"1.0\" encoding=\"utf-8\"?><Acuse ...>...</Acuse>"
+        '400':
+          description: Datos de la solicitud inválidos o incompletos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                validacion:
+                  value:
+                    message: Solicitud inválida
+                    detalle:
+                      - folioSustitucion es obligatorio con motivo 01 y debe tener formato de UUID
+                sinTicket:
+                  value:
+                    message: ticket es obligatorio para facturas emitidas por este sistema
+                sinRfcEmisor:
+                  value:
+                    message: rfcEmisor es obligatorio cuando la factura no fue emitida por este sistema
+        '403':
+          description: API Key ausente o inválida (respuesta del API Gateway).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorGateway'
+              example:
+                message: Forbidden
+        '404':
+          description: El RFC emisor no tiene un certificado (CSD) registrado en la plataforma.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: El RFC emisor no tiene un certificado (CSD) registrado; no es posible cancelar
+        '409':
+          description: La factura ya está cancelada o ya tiene una solicitud de cancelación en proceso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                cancelada:
+                  value:
+                    message: La factura ya está cancelada
+                enProceso:
+                  value:
+                    message: La factura ya tiene una solicitud de cancelación en proceso
+        '422':
+          description: Los datos no corresponden a la factura, o el SAT rechazó la cancelación.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ticket:
+                  value:
+                    message: El ticket no corresponde a la factura
+                rfcReceptor:
+                  value:
+                    message: El RFC del receptor no corresponde a la factura
+                rechazoSat:
+                  value:
+                    message: Folio Fiscal No Existente.
+                    detalle:
+                      codigoSat: "205"
+                      descripcion: "..."
+        '429':
+          description: Se excedió el límite de peticiones por segundo o la cuota diaria (respuesta del API Gateway).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorGateway'
+              example:
+                message: Too Many Requests
+        '500':
+          description: Error interno.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: Error interno al procesar la cancelación
+        '502':
+          description: El proveedor de certificación rechazó la solicitud o no respondió.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: CACFDI33 - Problemas con el xml.
+                detalle: CA305 - Certificado Inválido.
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+  schemas:
+    SolicitudCancelacion:
+      type: object
+      required: [uuid, rfcReceptor, motivo]
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          description: Folio fiscal (UUID) de la factura a cancelar. Se aceptan mayúsculas o minúsculas.
+          example: 5AB1CCC8-2CA2-471F-88FE-BBFA84153459
+        rfcReceptor:
+          type: string
+          minLength: 12
+          maxLength: 13
+          description: RFC del receptor de la factura.
+          example: URE180429TM6
+        rfcEmisor:
+          type: string
+          minLength: 12
+          maxLength: 13
+          description: |
+            RFC del emisor. Obligatorio si la factura NO fue emitida por este sistema.
+            Si se envía para una factura de este sistema, debe coincidir con la factura.
+          example: EKU9003173C9
+        ticket:
+          type: string
+          description: Número de ticket de la venta. Obligatorio si la factura fue emitida por este sistema.
+          example: "100245"
+        motivo:
+          type: string
+          enum: ["01", "02", "03", "04"]
+          description: |
+            Motivo de cancelación del catálogo del SAT:
+            - `01` Comprobante emitido con errores con relación (requiere `folioSustitucion`)
+            - `02` Comprobante emitido con errores sin relación
+            - `03` No se llevó a cabo la operación
+            - `04` Operación nominativa relacionada en una factura global
+        folioSustitucion:
+          type: string
+          format: uuid
+          description: |
+            UUID de la factura que sustituye a la cancelada. Obligatorio con motivo `01`, debe ser distinto de `uuid`
+            y no se debe enviar con otro motivo.
+          example: A29C3936-89A6-4BFD-AC82-B41DA2C51AA4
+    RespuestaCancelacion:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        estatus:
+          type: string
+          enum: [En proceso de cancelación, Cancelada]
+          description: |
+            - `En proceso de cancelación`: el SAT recibió la solicitud (código 201). Si la factura requiere aceptación
+              del receptor, se cancelará cuando éste acepte.
+            - `Cancelada`: la factura ya estaba cancelada ante el SAT (código 202).
+        codigoSat:
+          type: string
+          description: Código devuelto por el SAT (201 o 202 en respuestas exitosas).
+        mensaje:
+          type: string
+          nullable: true
+        descripcion:
+          type: string
+          nullable: true
+        emitidaPorEsteSistema:
+          type: boolean
+          description: Indica si la factura fue emitida por esta plataforma.
+        acuse:
+          type: string
+          nullable: true
+          description: Acuse de cancelación del SAT en XML.
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          description: Descripción del error.
+        detalle:
+          description: Información adicional (lista de errores de validación, detalle del proveedor o código del SAT).
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+            - type: object
+              properties:
+                codigoSat:
+                  type: string
+                descripcion:
+                  type: string
+                  nullable: true
+    ErrorGateway:
+      type: object
+      properties:
+        message:
+          type: string
