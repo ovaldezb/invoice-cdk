@@ -37,6 +37,7 @@ class CertificateApiGateway(Construct):
         self.alias_clip_webhook = alias.get("clip_webhook_alias")
         self.alias_timbrado_service = alias.get("timbrado_service_alias")
         self.alias_cancelacion = alias.get("cancelacion_alias")
+        self.alias_timbrado_xml = alias.get("timbrado_xml_alias")
         
         server = os.getenv("CORS_OPTION")
         print("CORS OPTION:", server)
@@ -215,6 +216,13 @@ class CertificateApiGateway(Construct):
         )
         cancelacion_usage_plan.add_api_key(cancelacion_api_key)
         cancelacion_usage_plan.add_api_stage(stage=api.deployment_stage)
+
+        # Timbrado de XML ya sellado (servidor a servidor). Por ahora es público: el
+        # cliente no puede enviar x-api-key todavía. Para protegerlo después basta con
+        # agregar api_key_required=True (usa la llave y el usage plan de /cancelacion).
+        timbrado_xml_resource = api.root.add_resource("timbrado-xml")
+        timbrado_xml_integration = apigw.LambdaIntegration(self.alias_timbrado_xml)
+        timbrado_xml_resource.add_method("POST", timbrado_xml_integration)
         CfnOutput(self, "CancelacionApiKeyId", value=cancelacion_api_key.key_id,
                   description="Id de la API Key de cancelacion (obtener valor con: aws apigateway get-api-key --api-key <id> --include-value)")
 
